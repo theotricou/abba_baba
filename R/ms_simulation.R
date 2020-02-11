@@ -55,3 +55,7 @@ comb = combn(seq(from = 1, to = nrow(sites)),4) # retunr all possible quatuor (o
 results = as.data.frame(do.call(rbind, apply(comb, 2, function(x) D_stat(sites, x))))
 
 # now test if basic H1 is true: P3 introgressed in P2 (D > 0 or P1 (D < 1)
+
+
+
+.
