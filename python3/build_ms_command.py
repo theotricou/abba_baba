@@ -92,7 +92,7 @@ Coal = "model <- coal_model(sample_size = c(%s), loci_number = %s, loci_length =
 Mutation = "feat_mutation(rate = %s, model = 'IFS', fixed_number = FALSE, locus_group = 'all') + \n" % mutation_rate
 
 
-Migration_starts = "feat_migration(%s, pop_from = %s, pop_to = %s, symmetric = FALSE, time = %s, locus_group = 'all') + \n" % (migration_rate, str(pop_donor.name).split("_")[-1], str(pop_recip.name).split("_")[-1], migration_start)
+Migration_starts = "feat_migration(%s, pop_from = %s, pop_to = %s, symmetric = FALSE, time = %s, locus_group = 'all') + \n" % (migration_rate, str(pop_donor.name).split("_")[0], str(pop_recip.name).split("_")[0], migration_start)
 Migration_ends = "feat_migration(0, pop_from = %s, pop_to = %s, symmetric = FALSE, time = %s, locus_group = 'all') + \n" % (str(pop_donor.name).split("_")[0], str(pop_recip.name).split("_")[0], migration_end)
 
 Stat_sum = "sumstat_seg_sites() + sumstat_trees() \n"
