@@ -131,9 +131,9 @@ D_stat <- function(stat_simulation, quatuor){
   return(data)
 }
 
-# output = "sim_1"
-# source(paste(output, "ms_command.R", sep = "/"))
-# source(paste(output, "Parameters", sep = "/"))
+output = "sim_1"
+source(paste(output, "ms_command.R", sep = "/"))
+source(paste(output, "Parameters", sep = "/"))
 
 tree <- read.tree(file.path(output, "spe_tree"))
 tr = keep.tip(tree, tree$tip.label[which(pop == 1)])
@@ -143,9 +143,25 @@ for (i in 2:length(pop)) {pop[i] <- pop[i-1] + pop[i]}
 cat("step 2 : running simmulation \n")
 # rep = simulate(model, nsim = 100000, cores = 4, seed = 23805)
 rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE, seed = SEED)
+
+
+coal_trees <- c()
+for (i in 1:length(rep)) {coal_trees[i] <- rep[[i]]$trees[[1]]}
+outfile_t <- paste(output, "all_trees", sep = "/")
+write(coal_trees, file=outfile_t)
+
 uniq <- lapply(rep, function(x){
   if (ncol(x$seg_sites[[1]][[1]]) == 1) {
       return(x$seg_sites[[1]][[1]])}})
+
+coal_trees <- c()
+for (i in 1:length(rep)) {coal_trees[i] <- rep[[i]]$trees[[1]]}
+outfile_t <- paste(output, "single_trees", sep = "/")
+single_trees <-coal_trees[which(uniq != "NULL")]
+write(single_trees, file=outfile_t)
+
+cmd <- paste("tar -cvzf", paste(outfile_t,"tar.gz", sep = "."), outfile_t, sep = " ")
+system(cmd, wait=T)
 
 sites <- c()
 for (i in 1:length(uniq)) {
@@ -163,20 +179,7 @@ results <- as.data.frame(t(apply(topologies, 1, function(x) D_stat(sites, x)))) 
 
 cat("step 4 : output \n")
 
-# outall <- paste(getwd(), "summary_simulation", sep = "/")
-# if(!file.exists(outall)){
-#   string_h = paste(c("sim", "donor", "recipient", names(tabl)), collapse = "\t")
-#   write(string_h, file = outall, append=TRUE)
-# }
-#
-# string = paste(c(output, name_donor, name_recip, tabl), collapse = "\t")
-# write(string, file = outall, append=TRUE)
-#
-#
-#
-outfile_d <- paste(output, "data", sep = "/")
-# outfile_t <- paste(output, "table", sep = "/")
+outfile_d <- paste(output, "data.txt", sep = "/")
 write.table(results, outfile_d, sep = "\t", row.names = F, append = F, quote=F)
-# write(string, file = outfile_t, append=TRUE)
 
 cat("End \n")

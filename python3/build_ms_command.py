@@ -85,6 +85,11 @@ te = tr(os.path.join(*args.tree.split('/')[0:-1], "ExtantTree.nwk"), format = 1)
 ts = tr(os.path.join(*args.tree.split('/')[0:-2], "SAMPLE_1/SampledSpeciesTree.nwk"), format = 1) # read phylo extant tree
 
 
+t = tr("sim_1/T/CompleteTree.nwk", format = 1) # read phylo tree
+te = tr("sim_1/T/ExtantTree.nwk", format = 1) # read phylo extant tree
+ts = tr("sim_1/SAMPLE_1/SampledSpeciesTree.nwk", format = 1) # read phylo extant tree
+
+
 ext_lineages = []
 extant = []
 sample = []

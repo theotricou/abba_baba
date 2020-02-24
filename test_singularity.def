@@ -1,0 +1,118 @@
+BootStrap: library
+From: ubuntu:18.04
+
+
+%setup
+    cd /
+    touch .condarc
+
+%files
+#
+
+%environment
+#
+    R_LIBS="/usr/local/lib/R/library"
+
+%post
+
+    apt-get -y update
+    apt-get install -y gcc gfortran cpp g++ libreadline-dev libx11-dev \
+    xserver-xorg-dev libx11-dev xorg-dev libbz2-dev  liblzma-dev \
+    libpcre3-dev  libxml2-dev libcurl4-gnutls-dev libssl-dev nano \
+    libgfortran-7-dev gfortran \build-essential \
+    wget bzip2 ca-certificates libglib2.0-0 libxext6 libsm6 libxrender1 git
+
+    NOW=`date`
+    echo "export NOW=\"${NOW}\"" >> $SINGULARITY_ENVIRONMENT
+
+    apt update && apt -y install g++
+    rm -rf /var/lib/apt/lists/*
+    apt-get clean
+
+    cd
+
+    echo deb http://dk.archive.ubuntu.com/ubuntu/ xenial main >> /etc/apt/sources.list
+    echo deb http://dk.archive.ubuntu.com/ubuntu/ xenial universe >> /etc/apt/sources.list
+
+    wget https://cran.r-project.org/src/base/R-3/R-3.6.1.tar.gz
+    tar -xvf R-3.6.1.tar.gz
+    cd R-3.6.1
+
+    ./configure
+    make
+    make install
+
+    wget https://cran.r-project.org/src/contrib/RcppArmadillo_0.9.850.1.0.tar.gz \
+    https://cran.r-project.org/src/contrib/scrm_1.7.3-1.tar.gz \
+    https://cran.r-project.org/src/contrib/rehh_3.0.1.tar.gz \
+    https://cran.microsoft.com/src/contrib/R6_2.4.1.tar.gz \
+    https://cran.r-project.org/src/contrib/digest_0.6.24.tar.gz \
+    https://cran.r-project.org/src/contrib/assertthat_0.2.1.tar.gz \
+    https://cran.r-project.org/src/contrib/coala_0.6.0.tar.gz \
+    https://cran.r-project.org/src/contrib/ape_5.3.tar.gz \
+    https://cran.r-project.org/src/contrib/Rcpp_1.0.3.tar.gz \
+    https://cran.r-project.org/src/contrib/phangorn_2.5.5.tar.gz \
+    https://cran.r-project.org/src/contrib/phyclust_0.1-28.tar.gz \
+    https://cran.r-project.org/src/contrib/rehh.data_1.0.0.tar.gz \
+    https://cran.r-project.org/src/contrib/quadprog_1.5-8.tar.gz \
+    https://cran.r-project.org/src/contrib/igraph_1.2.4.2.tar.gz \
+    https://cran.r-project.org/src/contrib/fastmatch_1.1-0.tar.gz \
+    https://cran.r-project.org/src/contrib/magrittr_1.5.tar.gz \
+    https://cran.r-project.org/src/contrib/pkgconfig_2.0.3.tar.gz \
+
+    R CMD INSTALL Rcpp_1.0.3.tar.gz ape_5.3.tar.gz
+
+    R CMD INSTALL assertthat_0.2.1.tar.gz digest_0.6.24.tar.gz R6_2.4.1.tar.gz \
+    rehh.data_1.0.0.tar.gz rehh_3.0.1.tar.gz scrm_1.7.3-1.tar.gz \
+    RcppArmadillo_0.9.850.1.0.tar.gz \
+    coala_0.6.0.tar.gz
+
+    R CMD INSTALL quadprog_1.5-8.tar.gz  magrittr_1.5.tar.gz \
+    pkgconfig_2.0.3.tar.gz  igraph_1.2.4.2.tar.gz \
+    fastmatch_1.1-0.tar.gz phangorn_2.5.5.tar.gz
+
+    R CMD INSTALL phyclust_0.1-28.tar.gz
+    R_LIBS="/usr/local/lib/R/library" R -q -e 'print(.libPaths())'
+    R_LIBS_SITE="/usr/lib/R/Library" R -q -e 'print(.libPaths())'
+
+    # R -e 'require("ape")'
+
+
+
+    ## python insall
+    # intall conda
+    cd
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+    # exec bash miniconda.sh -b -p miniconda
+    /bin/bash miniconda.sh -bfp /usr/local
+    #Conda configuration of channels from .condarc file
+    conda config --file /.condarc --add channels defaults
+    conda config --file /.condarc --add channels conda-forge
+    conda list
+    conda update conda
+    # Install ETE
+    conda install -c etetoolkit ete3
+    #List installed environments
+    conda list
+
+
+    ## R install
+
+
+
+
+%runscript
+    echo "Container was created $NOW"
+    echo "Arguments received: $*"
+    echo "Running simmualtion:"
+    R -q -e 'print(.libPaths())'
+    exec "$@"
+
+%labels
+    Author Theo Tricou
+    Version v0.1.0
+    Tag ABBA-BABA introgression ms ghost-lineage simulation
+
+%help
+    This is a container used for testing the power of ABBA-BABA.
+    Visite the git a this adress : https://github.com/theotricou/abba_baba

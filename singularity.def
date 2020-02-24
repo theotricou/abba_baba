@@ -1,0 +1,55 @@
+Bootstrap: docker
+From: ubuntu
+
+%help
+This singularity containts all R package necessary to run ms simulation
+
+%labels
+Maintainer Theo
+Mylabel R_bioinfo_abba_baba
+
+%setup
+#touch ${SINGULARITY_ROOTFS}/test1
+#touch test2
+
+%files
+#test1 /opt
+
+%environment
+#export SCRIPT_OPT=option
+
+%post
+apt-get update
+apt install -y wget gcc gfortran cpp g++ libreadline-dev libx11-dev xserver-xorg-dev libx11-dev xorg-dev libbz2-dev lzma-dev liblzma-dev libpcre3-dev  libxml2-dev libcurl4-gnutls-dev libssl-dev nano libgfortran-7-dev gfortran libudunits2-dev
+# r-cran-curl r-cran-xml2 libcurl4-openssl-dev 
+apt -y remove r-base-core r-base
+echo deb http://dk.archive.ubuntu.com/ubuntu/ xenial main >> /etc/apt/sources.list
+echo deb http://dk.archive.ubuntu.com/ubuntu/ xenial universe >> /etc/apt/sources.list
+
+apt update && apt -y install g++-4.9
+
+apt-get clean
+
+wget https://cran.r-project.org/src/base/R-3/R-3.6.1.tar.gz
+tar -xvf R-3.6.1.tar.gz
+cd R-3.6.1
+
+./configure
+make
+make install
+
+R -e 'version'
+R -e 'install.packages("BiocManager",repos="https://pbil.univ-lyon1.fr/CRAN/")'
+
+# Install required R packages for bionfo
+
+R -e 'install.packages("coala",repos="https://pbil.univ-lyon1.fr/CRAN/")'
+R -e 'install.packages("phyclust",repos="https://pbil.univ-lyon1.fr/CRAN/")'
+R -e 'install.packages("ape",repos="https://pbil.univ-lyon1.fr/CRAN/")'
+R -e 'install.packages("phangorn",repos="https://pbil.univ-lyon1.fr/CRAN/")'
+
+
+
+
+%runscript
+
