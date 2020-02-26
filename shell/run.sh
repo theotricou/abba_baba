@@ -29,3 +29,13 @@ sudo singularity build --sandbox ubuntu/ library://ubuntu
 
 # building from def
 sudo singularity build singularity.sif test_singularity.def
+
+
+ssh -AX ubuntu@134.214.213.82
+
+rsync -a singularity.sif tricou@pbil-deb.univ-lyon1.fr:/beegfs/home/tricou/singularity_image
+
+rsync -a singularity.sif ubuntu@134.214.213.82:
+
+
+singularity shell singularity.sif --cleanenv --contain

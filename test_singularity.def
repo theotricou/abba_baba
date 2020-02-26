@@ -1,20 +1,30 @@
 BootStrap: library
 From: ubuntu:18.04
 
-
 %setup
     cd /
     touch .condarc
 
 %files
-#
 
 %environment
-#
+    #
+    R_VERSION=3.6.1
+    export R_VERSION
+    R_CONFIG_DIR=/etc/R/
+    export R_CONFIG_DIR
+    export LC_ALL=C
+    export PATH=$PATH
     R_LIBS="/usr/local/lib/R/library"
+    R_LIBS_SITE="/usr/local/lib/R/library"
+    R_LIBS_USER="/usr/local/lib/R/library"
+    export R_LIBS
+    export R_LIBS_SITE
+    export R_LIBS_USER
 
 %post
 
+    cd
     apt-get -y update
     apt-get install -y gcc gfortran cpp g++ libreadline-dev libx11-dev \
     xserver-xorg-dev libx11-dev xorg-dev libbz2-dev  liblzma-dev \
@@ -31,9 +41,6 @@ From: ubuntu:18.04
 
     cd
 
-    echo deb http://dk.archive.ubuntu.com/ubuntu/ xenial main >> /etc/apt/sources.list
-    echo deb http://dk.archive.ubuntu.com/ubuntu/ xenial universe >> /etc/apt/sources.list
-
     wget https://cran.r-project.org/src/base/R-3/R-3.6.1.tar.gz
     tar -xvf R-3.6.1.tar.gz
     cd R-3.6.1
@@ -45,8 +52,8 @@ From: ubuntu:18.04
     wget https://cran.r-project.org/src/contrib/RcppArmadillo_0.9.850.1.0.tar.gz \
     https://cran.r-project.org/src/contrib/scrm_1.7.3-1.tar.gz \
     https://cran.r-project.org/src/contrib/rehh_3.0.1.tar.gz \
-    https://cran.microsoft.com/src/contrib/R6_2.4.1.tar.gz \
-    https://cran.r-project.org/src/contrib/digest_0.6.24.tar.gz \
+    https://cran.r-project.org/src/contrib/R6_2.4.1.tar.gz \
+    https://cran.r-project.org/src/contrib/Archive/digest/digest_0.6.24.tar.gz \
     https://cran.r-project.org/src/contrib/assertthat_0.2.1.tar.gz \
     https://cran.r-project.org/src/contrib/coala_0.6.0.tar.gz \
     https://cran.r-project.org/src/contrib/ape_5.3.tar.gz \
@@ -58,7 +65,9 @@ From: ubuntu:18.04
     https://cran.r-project.org/src/contrib/igraph_1.2.4.2.tar.gz \
     https://cran.r-project.org/src/contrib/fastmatch_1.1-0.tar.gz \
     https://cran.r-project.org/src/contrib/magrittr_1.5.tar.gz \
-    https://cran.r-project.org/src/contrib/pkgconfig_2.0.3.tar.gz \
+    https://cran.r-project.org/src/contrib/pkgconfig_2.0.3.tar.gz
+
+
 
     R CMD INSTALL Rcpp_1.0.3.tar.gz ape_5.3.tar.gz
 
@@ -72,12 +81,6 @@ From: ubuntu:18.04
     fastmatch_1.1-0.tar.gz phangorn_2.5.5.tar.gz
 
     R CMD INSTALL phyclust_0.1-28.tar.gz
-    R_LIBS="/usr/local/lib/R/library" R -q -e 'print(.libPaths())'
-    R_LIBS_SITE="/usr/lib/R/Library" R -q -e 'print(.libPaths())'
-
-    # R -e 'require("ape")'
-
-
 
     ## python insall
     # intall conda
@@ -91,21 +94,31 @@ From: ubuntu:18.04
     conda list
     conda update conda
     # Install ETE
-    conda install -c etetoolkit ete3
+    conda install -c etetoolkit ete3=3.1.1
+    conda install -c anaconda numpy=1.15.4
+    conda install -c anaconda networkx=2.2
+    conda install -c bioconda pyvolve=0.9.0
+
     #List installed environments
     conda list
 
 
     ## R install
 
+%test
+    R -e 'require("ape")'
 
+
+%apprun R
+    exec R "$@"
+
+%apprun Rscript
+    exec Rscript "$@"
+
+%runscript
 
 
 %runscript
-    echo "Container was created $NOW"
-    echo "Arguments received: $*"
-    echo "Running simmualtion:"
-    R -q -e 'print(.libPaths())'
     exec "$@"
 
 %labels
