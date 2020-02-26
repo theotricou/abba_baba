@@ -5,10 +5,16 @@ args = commandArgs(trailingOnly=TRUE)
 
 cat("step 1 : initializing \n")
 
+source2 <- function(file, start, end, ...) {
+    file.lines <- scan(file, what=character(), skip=start-1, nlines=end-start+1, sep='\n')
+    file.lines.collapsed <- paste(file.lines, collapse='\n')
+    source(textConnection(file.lines.collapsed), ...)
+}
+
 if (length(args) == 0) {
   if(file.exists("Simulation/ms_command.R")) {
     source("Simulation/ms_command.R")
-    source("Simulation/Parameters")
+    source("Parameters")
     output = "Simulation"
   } else {
     print("You need to create a ms command by running build_ms_command.py to run this script")
@@ -18,7 +24,7 @@ if (length(args) == 0) {
   source(args[1])
   path = strsplit(args[1], "/")[[1]]
   output = paste(path[seq(1,length(path) -1)], collapse = '/')
-  source(paste(output, "Parameters", sep = "/"))
+  source2(paste(output, paste("Param_", output, sep = ""), sep = "/"),37,85)
   if (length(path) == 1) {output = "./"} else {output = paste(path[seq(1,length(path) -1)], collapse = '/')}
 } else if (length(args) == 2) {
   source(args[1])
@@ -131,9 +137,9 @@ D_stat <- function(stat_simulation, quatuor){
   return(data)
 }
 
-output = "sim_1"
-source(paste(output, "ms_command.R", sep = "/"))
-source(paste(output, "Parameters", sep = "/"))
+# output = "sim_1"
+# source(paste(output, "ms_command.R", sep = "/"))
+# source(paste(output, "Parameters", sep = "/"))
 
 tree <- read.tree(file.path(output, "spe_tree"))
 tr = keep.tip(tree, tree$tip.label[which(pop == 1)])
@@ -156,11 +162,14 @@ uniq <- lapply(rep, function(x){
 
 coal_trees <- c()
 for (i in 1:length(rep)) {coal_trees[i] <- rep[[i]]$trees[[1]]}
+outfile_a <- paste(output, "all_trees", sep = "/")
 outfile_t <- paste(output, "single_trees", sep = "/")
+write(all_trees, file=outfile_a)
+cmd <- paste("tar -cvzf", paste(outfile_a,"tar.gz", sep = "."), outfile_t, "--remove-files", sep = " ")
+system(cmd, wait=T)
 single_trees <-coal_trees[which(uniq != "NULL")]
 write(single_trees, file=outfile_t)
-
-cmd <- paste("tar -cvzf", paste(outfile_t,"tar.gz", sep = "."), outfile_t, sep = " ")
+cmd <- paste("tar -cvzf", paste(outfile_t,"tar.gz", sep = "."), outfile_t, "--remove-files", sep = " ")
 system(cmd, wait=T)
 
 sites <- c()

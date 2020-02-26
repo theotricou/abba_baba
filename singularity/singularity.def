@@ -4,47 +4,45 @@ From: ubuntu:18.04
 %setup
     cd /
     touch .condarc
+    mkdir ${SINGULARITY_ROOTFS}/simulation/
+    touch ${SINGULARITY_ROOTFS}/simulation/files
 
 %files
 
 %environment
-    #
     R_VERSION=3.6.1
     export R_VERSION
     R_CONFIG_DIR=/etc/R/
     export R_CONFIG_DIR
     export LC_ALL=C
-    export PATH=$PATH
     R_LIBS="/usr/local/lib/R/library"
     R_LIBS_SITE="/usr/local/lib/R/library"
     R_LIBS_USER="/usr/local/lib/R/library"
     export R_LIBS
     export R_LIBS_SITE
     export R_LIBS_USER
+    SINGULARITY_NAME=simulation
+    SINGULARITY_CONTAINER=simulation
 
 %post
-
-    cd
+    cd /simulation
     apt-get -y update
     apt-get install -y gcc gfortran cpp g++ libreadline-dev libx11-dev \
-    xserver-xorg-dev libx11-dev xorg-dev libbz2-dev  liblzma-dev \
+    xserver-xorg-dev xorg-dev libbz2-dev  liblzma-dev \
     libpcre3-dev  libxml2-dev libcurl4-gnutls-dev libssl-dev nano \
-    libgfortran-7-dev gfortran \build-essential \
+    libgfortran-7-dev build-essential \
     wget bzip2 ca-certificates libglib2.0-0 libxext6 libsm6 libxrender1 git
-
     NOW=`date`
     echo "export NOW=\"${NOW}\"" >> $SINGULARITY_ENVIRONMENT
 
-    apt update && apt -y install g++
     rm -rf /var/lib/apt/lists/*
     apt-get clean
-
-    cd
+    apt-get autoclean
+    apt-get autoremove
 
     wget https://cran.r-project.org/src/base/R-3/R-3.6.1.tar.gz
-    tar -xvf R-3.6.1.tar.gz
+    tar -xvf R-3.6.1.tar.gz --remove-files
     cd R-3.6.1
-
     ./configure
     make
     make install
@@ -52,7 +50,7 @@ From: ubuntu:18.04
     wget https://cran.r-project.org/src/contrib/RcppArmadillo_0.9.850.1.0.tar.gz \
     https://cran.r-project.org/src/contrib/scrm_1.7.3-1.tar.gz \
     https://cran.r-project.org/src/contrib/rehh_3.0.1.tar.gz \
-    https://cran.r-project.org/src/contrib/R6_2.4.1.tar.gz \
+    https://cran.microsoft.com/src/contrib/R6_2.4.1.tar.gz \
     https://cran.r-project.org/src/contrib/Archive/digest/digest_0.6.24.tar.gz \
     https://cran.r-project.org/src/contrib/assertthat_0.2.1.tar.gz \
     https://cran.r-project.org/src/contrib/coala_0.6.0.tar.gz \
@@ -67,9 +65,8 @@ From: ubuntu:18.04
     https://cran.r-project.org/src/contrib/magrittr_1.5.tar.gz \
     https://cran.r-project.org/src/contrib/pkgconfig_2.0.3.tar.gz
 
-
-
-    R CMD INSTALL Rcpp_1.0.3.tar.gz ape_5.3.tar.gz
+    R CMD INSTALL Rcpp_1.0.3.tar.gz \
+    ape_5.3.tar.gz
 
     R CMD INSTALL assertthat_0.2.1.tar.gz digest_0.6.24.tar.gz R6_2.4.1.tar.gz \
     rehh.data_1.0.0.tar.gz rehh_3.0.1.tar.gz scrm_1.7.3-1.tar.gz \
@@ -78,16 +75,22 @@ From: ubuntu:18.04
 
     R CMD INSTALL quadprog_1.5-8.tar.gz  magrittr_1.5.tar.gz \
     pkgconfig_2.0.3.tar.gz  igraph_1.2.4.2.tar.gz \
-    fastmatch_1.1-0.tar.gz phangorn_2.5.5.tar.gz
+    fastmatch_1.1-0.tar.gz \
+    phangorn_2.5.5.tar.gz
 
     R CMD INSTALL phyclust_0.1-28.tar.gz
 
+    rm *tar.gz
+
     ## python insall
     # intall conda
-    cd
+    cd /simulation
+    git clone https://github.com/AADavin/ZOMBI.git
+
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
     # exec bash miniconda.sh -b -p miniconda
     /bin/bash miniconda.sh -bfp /usr/local
+    # rm Miniconda3-latest-Linux-x86_64.sh
     #Conda configuration of channels from .condarc file
     conda config --file /.condarc --add channels defaults
     conda config --file /.condarc --add channels conda-forge
@@ -98,16 +101,13 @@ From: ubuntu:18.04
     conda install -c anaconda numpy=1.15.4
     conda install -c anaconda networkx=2.2
     conda install -c bioconda pyvolve=0.9.0
-
     #List installed environments
+    conda clean --all
     conda list
-
-
-    ## R install
+    rm /simulation/miniconda.sh
 
 %test
     R -e 'require("ape")'
-
 
 %apprun R
     exec R "$@"
@@ -115,8 +115,11 @@ From: ubuntu:18.04
 %apprun Rscript
     exec Rscript "$@"
 
-%runscript
+%apprun python
+    exec python "$@"
 
+%apprun zombi
+    exec python /simulation/ZOMBI/ZOMBI.py "$@"
 
 %runscript
     exec "$@"
@@ -128,4 +131,4 @@ From: ubuntu:18.04
 
 %help
     This is a container used for testing the power of ABBA-BABA.
-    Visite the git a this adress : https://github.com/theotricou/abba_baba
+    Visite the GitHub repository at: https://github.com/theotricou/abba_baba

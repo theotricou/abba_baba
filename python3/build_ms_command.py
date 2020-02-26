@@ -78,17 +78,20 @@ else:
     ploidy = read_param("PLOIDY")
     n_genaration_to_root = read_param("N_GENERATION")
     os.system('cp %s %s' % (args.parameters, args.output))
-
+    if not read_param("SEED") == 0:
+        random.seed(read_param("SEED"))
 
 t = tr(args.tree, format = 1) # read phylo tree
 te = tr(os.path.join(*args.tree.split('/')[0:-1], "ExtantTree.nwk"), format = 1) # read phylo extant tree
-ts = tr(os.path.join(*args.tree.split('/')[0:-2], "SAMPLE_1/SampledSpeciesTree.nwk"), format = 1) # read phylo extant tree
-
-
-t = tr("sim_1/T/CompleteTree.nwk", format = 1) # read phylo tree
-te = tr("sim_1/T/ExtantTree.nwk", format = 1) # read phylo extant tree
-ts = tr("sim_1/SAMPLE_1/SampledSpeciesTree.nwk", format = 1) # read phylo extant tree
-
+# try:
+#     ts = tr(os.path.join(*args.tree.split('/')[0:-2], "SAMPLE_1/SampledSpeciesTree.nwk"), format = 1) # read phylo extant tree
+# except:
+ts = te.copy()
+#
+# t = tr("sim_1/T/CompleteTree.nwk", format = 1) # read phylo tree
+# te = tr("sim_1/T/ExtantTree.nwk", format = 1) # read phylo extant tree
+# ts = tr("sim_1/SAMPLE_1/SampledSpeciesTree.nwk", format = 1) # read phylo extant tree
+#
 
 ext_lineages = []
 extant = []
@@ -131,7 +134,7 @@ for i in t.traverse('postorder'):
 
 # randomly choose a donor lineage and a recipient (this recipient need to have a least one extant descendant)
 
-print("picking migration duo. Possible bottleneck !")
+print("\nPicking migration duo. Possible bottleneck!")
 
 all_node = t.get_descendants()
 range_migration = [0,0]
