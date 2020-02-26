@@ -5,36 +5,46 @@ args = commandArgs(trailingOnly=TRUE)
 
 cat("step 1 : initializing \n")
 
-source2 <- function(file, start, end, ...) {
-    file.lines <- scan(file, what=character(), skip=start-1, nlines=end-start+1, sep='\n')
-    file.lines.collapsed <- paste(file.lines, collapse='\n')
-    source(textConnection(file.lines.collapsed), ...)
-}
+# source2 <- function(file, start, end, ...) {
+#     file.lines <- scan(file, what=character(), skip=start-1, nlines=end-start+1, sep='\n')
+#     file.lines.collapsed <- paste(file.lines, collapse='\n')
+#     source(textConnection(file.lines.collapsed), ...)
+# }
 
-if (length(args) == 0) {
-  if(file.exists("Simulation/ms_command.R")) {
-    source("Simulation/ms_command.R")
-    source("Parameters")
-    output = "Simulation"
-  } else {
-    print("You need to create a ms command by running build_ms_command.py to run this script")
-    quit()
-  }
-} else if (length(args) == 1) {
-  source(args[1])
-  path = strsplit(args[1], "/")[[1]]
-  output = paste(path[seq(1,length(path) -1)], collapse = '/')
-  source2(paste(output, paste("Param_", output, sep = ""), sep = "/"),37,85)
-  if (length(path) == 1) {output = "./"} else {output = paste(path[seq(1,length(path) -1)], collapse = '/')}
-} else if (length(args) == 2) {
-  source(args[1])
-  output = args[2]
-} else {
-  print("Too much argument were given, only the two first one will be used as input and output respectively")
-  source(args[1])
-  path = strsplit(args[2], "/")[[1]]
-  if (length(path) == 1) {output = "./"} else {output = paste(path[seq(1,length(path) -1)], collapse = '/')}
-}
+# if (length(args) == 0) {
+#   if(file.exists("Simulation/ms_command.R")) {
+#     source("Simulation/ms_command.R")
+#     source("Parameters/sim_parameters")
+#     output = "Simulation"
+#   } else {
+#     print("You need to create a ms command by running build_ms_command.py to run this script")
+#     quit()
+#   }
+# } else if (length(args) == 1) {
+#   source(args[1])
+#   path = strsplit(args[1], "/")[[1]]
+#   output = paste(path[seq(1,length(path) -1)], collapse = '/')
+#   source2(paste(output, paste("Param_", output, sep = ""), sep = "/"),37,85)
+#   if (length(path) == 1) {output = "./"} else {output = paste(path[seq(1,length(path) -1)], collapse = '/')}
+# } else if (length(args) == 2) {
+#   source(args[1])
+#   output = args[2]
+# } else {
+#   print("Too much argument were given, only the two first one will be used as input and output respectively")
+#   source(args[1])
+#   path = strsplit(args[2], "/")[[1]]
+#   if (length(path) == 1) {output = "./"} else {output = paste(path[seq(1,length(path) -1)], collapse = '/')}
+# }
+
+# source(args[1])
+# source(args[2])
+# path = strsplit(args[1], "/")[[1]]
+# output = paste(path[seq(1,length(path) -1)], collapse = '/')
+
+output=args[1]
+source(paste(args[1],"ms_command.R", sep ="/"))
+source(paste(args[2],"sim_parameters", sep ="/"))
+
 
 is_abba <- function(seg_site){if(sum(seg_site) == 2 & seg_site[1] == seg_site[4]){return(1)} else {return(0)}}
 is_baba <- function(seg_site){if(sum(seg_site) == 2 & seg_site[1] == seg_site[3]){return(1)} else {return(0)}}
@@ -148,29 +158,30 @@ for (i in 2:length(pop)) {pop[i] <- pop[i-1] + pop[i]}
 
 cat("step 2 : running simmulation \n")
 # rep = simulate(model, nsim = 100000, cores = 4, seed = 23805)
-rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE, seed = SEED)
+
+if (SEED == 0){
+  rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE)
+} else {rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE, seed = SEED}
+
 
 
 coal_trees <- c()
 for (i in 1:length(rep)) {coal_trees[i] <- rep[[i]]$trees[[1]]}
-outfile_t <- paste(output, "all_trees", sep = "/")
-write(coal_trees, file=outfile_t)
+outfile_a <- paste(output, "all_trees", sep = "/")
+write(coal_trees, file=outfile_a)
+cmd <- paste("tar -cvzf", paste(outfile_a,"tar.gz", sep = "."), outfile_a, "--remove-files", sep = " ")
+system(cmd, wait=T)
 
 uniq <- lapply(rep, function(x){
   if (ncol(x$seg_sites[[1]][[1]]) == 1) {
       return(x$seg_sites[[1]][[1]])}})
 
-coal_trees <- c()
-for (i in 1:length(rep)) {coal_trees[i] <- rep[[i]]$trees[[1]]}
-outfile_a <- paste(output, "all_trees", sep = "/")
-outfile_t <- paste(output, "single_trees", sep = "/")
-write(all_trees, file=outfile_a)
-cmd <- paste("tar -cvzf", paste(outfile_a,"tar.gz", sep = "."), outfile_t, "--remove-files", sep = " ")
+outfile_s <- paste(output, "single_trees", sep = "/")
+single_trees <- coal_trees[which(uniq != "NULL")]
+write(single_trees, file=outfile_s)
+cmd <- paste("tar -cvzf", paste(outfile_s,"tar.gz", sep = "."), outfile_s, "--remove-files", sep = " ")
 system(cmd, wait=T)
-single_trees <-coal_trees[which(uniq != "NULL")]
-write(single_trees, file=outfile_t)
-cmd <- paste("tar -cvzf", paste(outfile_t,"tar.gz", sep = "."), outfile_t, "--remove-files", sep = " ")
-system(cmd, wait=T)
+
 
 sites <- c()
 for (i in 1:length(uniq)) {

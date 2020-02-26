@@ -77,7 +77,7 @@ else:
     len_locus = read_param("LOCI_LENGTH")
     ploidy = read_param("PLOIDY")
     n_genaration_to_root = read_param("N_GENERATION")
-    os.system('cp %s %s' % (args.parameters, args.output))
+    # os.system('cp %s %s' % (args.parameters, args.output))
     if not read_param("SEED") == 0:
         random.seed(read_param("SEED"))
 
@@ -133,8 +133,8 @@ for i in t.traverse('postorder'):
 
 
 # randomly choose a donor lineage and a recipient (this recipient need to have a least one extant descendant)
-
-print("\nPicking migration duo. Possible bottleneck!")
+if args.verbose:
+    print("\nPicking migration duo. Possible bottleneck!")
 
 all_node = t.get_descendants()
 range_migration = [0,0]

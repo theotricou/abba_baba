@@ -119,7 +119,7 @@ From: ubuntu:18.04
     exec python "$@"
 
 %apprun zombi
-    exec python /simulation/ZOMBI/ZOMBI.py "$@"
+    exec python /simulation/ZOMBI/Zombi.py "$@"
 
 %runscript
     exec "$@"
