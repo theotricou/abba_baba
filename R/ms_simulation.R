@@ -2,7 +2,7 @@
 # Théo
 
 
-cat("Starting ms simulation")
+cat("Starting ms simulation \n")
 args = commandArgs(trailingOnly=TRUE)
 
 cat("step 1 : initializing \n")
