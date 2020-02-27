@@ -85,8 +85,10 @@ From: ubuntu:18.04
     ## python insall
     # intall conda
     cd /simulation
-    git clone https://github.com/AADavin/ZOMBI.git
-
+    git clone -n https://github.com/AADavin/ZOMBI.git
+    cd ZOMBI
+    git checkout 21d562cc380fafca58a7068913f4a17f52c60451
+    cd /simulation
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
     # exec bash miniconda.sh -b -p miniconda
     /bin/bash miniconda.sh -bfp /usr/local

@@ -14,11 +14,11 @@ if [ ! -d "$dir" ]; then
   sed "s/1123581321/$seed/g" $zomp > $dir/zombi_parameters
   sed "s/1123581321/$seed/g" $simp > $dir/sim_parameters
 
-  singularity run $singularity python ~/GitHub/ZOMBI/Zombi.py T $dir/zombi_parameters $dir
+  singularity run $singularity python /simulation/ZOMBI/Zombi.py T $dir/zombi_parameters $dir
 
-  singularity run $singularity python python3/build_ms_command.py $dir/T/CompleteTree.nwk -p $dir/sim_parameters -o $dir -v
+  singularity run $singularity python ${path%run.sh}python3/build_ms_command.py $dir/T/CompleteTree.nwk -p $dir/sim_parameters -o $dir -v
 
-  singularity run $singularity Rscript R/ms_simulation.R $dir
+  singularity run $singularity Rscript ${path%run.sh}R/ms_simulation.R $dir
 
 else
 

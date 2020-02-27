@@ -15,7 +15,7 @@ MU=1e-7
 # This value is used to convert the simulated tree branch length
 # in coalescent time.
 #
-N_GENERATION=600000
+N_GENERATION=1000000
 #
 #
 # Mean Length of the locus to simulate.
@@ -31,7 +31,7 @@ PLOIDY=1
 ##### ms_simulation.R parameters.
 # Number of ms simulation replicate.
 #
-N_SIMULATION=5000
+N_SIMULATION=1000000
 #
 #
 # The number of cores that the independent repetitions from N_SIMULATION will
