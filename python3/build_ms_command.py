@@ -15,6 +15,10 @@ import argparse
 #     dir = "Sim_" + str(exp_n)
 #     exp_n += 1
 
+
+print("\nBuilding ms command")
+
+
 parser = argparse.ArgumentParser(description='Optional app description')
 
 parser.add_argument('tree', type = str, help = 'A phylogenetic tree')

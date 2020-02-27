@@ -31,7 +31,7 @@ PLOIDY=1
 ##### ms_simulation.R parameters.
 # Number of ms simulation replicate.
 #
-N_SIMULATION=50000
+N_SIMULATION=5000
 #
 #
 # The number of cores that the independent repetitions from N_SIMULATION will

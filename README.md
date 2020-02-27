@@ -1,12 +1,12 @@
 # abba_baba
 
 
-running a simulation:
+Running a simulation:
 
     run.sh  /PATH/Singularity.sif Simulation_output seed Parameters/zombi_parameters Parameters/sim_parameters
 
 
-exemple:
+Exemple:
 
     run.sh  sim.sif sim_1 8059 Parameters/zombi_parameters Parameters/sim_parameters
 

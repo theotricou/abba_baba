@@ -1,6 +1,8 @@
 #!/usr/bin/env Rscript
 # Théo
 
+
+cat("Starting ms simulation")
 args = commandArgs(trailingOnly=TRUE)
 
 cat("step 1 : initializing \n")
@@ -43,7 +45,7 @@ cat("step 1 : initializing \n")
 
 output=args[1]
 source(paste(args[1],"ms_command.R", sep ="/"))
-source(paste(args[2],"sim_parameters", sep ="/"))
+source(paste(args[1],"sim_parameters", sep ="/"))
 
 
 is_abba <- function(seg_site){if(sum(seg_site) == 2 & seg_site[1] == seg_site[4]){return(1)} else {return(0)}}
@@ -159,14 +161,17 @@ for (i in 2:length(pop)) {pop[i] <- pop[i-1] + pop[i]}
 cat("step 2 : running simmulation \n")
 # rep = simulate(model, nsim = 100000, cores = 4, seed = 23805)
 
-if (SEED == 0){
+if (SEED == 0) {
   rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE)
-} else {rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE, seed = SEED}
+} else {
+  rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE, seed = SEED)
+}
 
 
 
 coal_trees <- c()
 for (i in 1:length(rep)) {coal_trees[i] <- rep[[i]]$trees[[1]]}
+cat("Outputting all trees from simualtion in: ")
 outfile_a <- paste(output, "all_trees", sep = "/")
 write(coal_trees, file=outfile_a)
 cmd <- paste("tar -cvzf", paste(outfile_a,"tar.gz", sep = "."), outfile_a, "--remove-files", sep = " ")
@@ -176,6 +181,7 @@ uniq <- lapply(rep, function(x){
   if (ncol(x$seg_sites[[1]][[1]]) == 1) {
       return(x$seg_sites[[1]][[1]])}})
 
+cat("Outputting trees from single segregating site locus in: ")
 outfile_s <- paste(output, "single_trees", sep = "/")
 single_trees <- coal_trees[which(uniq != "NULL")]
 write(single_trees, file=outfile_s)
