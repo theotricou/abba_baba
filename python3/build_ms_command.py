@@ -83,7 +83,7 @@ else:
     n_genaration_to_root = read_param("N_GENERATION")
     # os.system('cp %s %s' % (args.parameters, args.output))
     if not read_param("SEED") == 0:
-        random.seed(read_param("SEED"))
+        random.seed(int(read_param("SEED")))
 
 t = tr(args.tree, format = 1) # read phylo tree
 te = tr(os.path.join(*args.tree.split('/')[0:-1], "ExtantTree.nwk"), format = 1) # read phylo extant tree

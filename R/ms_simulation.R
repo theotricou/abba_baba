@@ -57,14 +57,12 @@ validateandreorder<-function(arr, dist) {
   if (sum(submat==max(submat))==6) {
     diag(submat)<-1
     return(names(sort(apply(submat,1,prod))))
-  } else if (sum(submat==max(submat))!=6 & sum(submat==max(submat))!=8) {
-    return("ERROR in rounding branch length")
   }
 }
 
 getquatuors<-function(tr) {
-  dist<-cophenetic(tr)
-  dist<-round(dist,4)
+  dist<-cophenetic(compute.brlen(tr))
+  # dist<-round(dist,3) # this is a dangerous thing to do
   allquat<-combn(tr$tip.label,4)
   RES<-do.call(rbind,apply(allquat, 2, function(x) validateandreorder(x, dist)))
   return(RES)
