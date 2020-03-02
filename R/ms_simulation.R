@@ -63,8 +63,8 @@ validateandreorder<-function(arr, dist) {
 
 getquatuors<-function(tr) {
   # created by Damien, modified by Theo
-  dist<-cophenetic(compute.brlen(tr)) { # compute.brlen used to get rid of uneven branch length
-  # dist<-round(dist,3) # this is a dangerous thing to do
+  # dist<-cophenetic(compute.brlen(tr)) # compute.brlen used to get rid of uneven branch length
+  dist<-round(cophenetic(tr),3) # this is a dangerous thing to do
   allquat<-combn(tr$tip.label,4)
   RES<-do.call(rbind,apply(allquat, 2, function(x) validateandreorder(x, dist)))
   return(RES)
@@ -152,7 +152,7 @@ D_stat <- function(stat_simulation, quatuor){
 # output = "sim_1"
 # source(paste(output, "ms_command.R", sep = "/"))
 # source(paste(output, "Parameters", sep = "/"))
-
+output = "./"
 tree <- read.tree(file.path(output, "spe_tree"))
 tr = keep.tip(tree, tree$tip.label[which(pop == 1)])
 
@@ -192,10 +192,14 @@ system(cmd, wait=T)
 
 cat("step 2 : sites \n")
 
-sites <- c()
-for (i in 1:length(uniq)) {
-  if (length(uniq[[i]]) != 0 & sum(uniq[[i]]) > 1) {
-    sites <- cbind(sites, uniq[[i]])}}
+
+sites <- do.call("cbind", uniq)
+sites <- sites[, colSums(sites != 0) > 1]
+
+# sites <- c()
+# for (i in 1:length(uniq)) {
+#   if (length(uniq[[i]]) != 0 & sum(uniq[[i]]) > 1) {
+#     sites <- cbind(sites, uniq[[i]])}}
 
 topologies <- getquatuors(tr)
 spnd<-c(tree$tip.label, tree$node.label)
@@ -204,6 +208,7 @@ true_recip = which(spnd == name_recip) # from variable in sourced file
 
 cat("step 3 : computing summary statistics \n")
 
+# results <- ((apply(topologies, 1, function(x) D_stat(sites, x)))) # bottleneck
 results <- as.data.frame(t(apply(topologies, 1, function(x) D_stat(sites, x)))) # bottleneck
 
 cat("step 4 : output \n")
