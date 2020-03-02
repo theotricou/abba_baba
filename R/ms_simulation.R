@@ -53,6 +53,7 @@ is_baba <- function(seg_site){if(sum(seg_site) == 2 & seg_site[1] == seg_site[3]
 
 
 validateandreorder<-function(arr, dist) {
+  # created by Damien
   submat<-dist[arr,arr]
   if (sum(submat==max(submat))==6) {
     diag(submat)<-1
@@ -61,7 +62,8 @@ validateandreorder<-function(arr, dist) {
 }
 
 getquatuors<-function(tr) {
-  dist<-cophenetic(compute.brlen(tr))
+  # created by Damien, modified by Theo
+  dist<-cophenetic(compute.brlen(tr)) { # compute.brlen used to get rid of uneven branch length
   # dist<-round(dist,3) # this is a dangerous thing to do
   allquat<-combn(tr$tip.label,4)
   RES<-do.call(rbind,apply(allquat, 2, function(x) validateandreorder(x, dist)))
@@ -167,13 +169,13 @@ if (SEED == 0) {
 
 
 
-# coal_trees <- c()
-# for (i in 1:length(rep)) {coal_trees[i] <- rep[[i]]$trees[[1]]}
-# cat("Outputting all trees from simualtion in: ")
-# outfile_a <- paste(output, "all_trees", sep = "/")
-# write(coal_trees, file=outfile_a)
-# cmd <- paste("tar -cvzf", paste(outfile_a,"tar.gz", sep = "."), outfile_a, "--remove-files", sep = " ")
-# system(cmd, wait=T)
+coal_trees <- c()
+for (i in 1:length(rep)) {coal_trees[i] <- rep[[i]]$trees[[1]]}
+cat("Outputting all trees from simualtion in: ")
+outfile_a <- paste(output, "all_trees", sep = "/")
+write(coal_trees, file=outfile_a)
+cmd <- paste("tar -cvzf", paste(outfile_a,"tar.gz", sep = "."), outfile_a, "--remove-files", sep = " ")
+system(cmd, wait=T)
 
 cat("step 2 : uniq \n")
 
@@ -181,12 +183,12 @@ uniq <- lapply(rep, function(x){
   if (ncol(x$seg_sites[[1]][[1]]) == 1) {
       return(x$seg_sites[[1]][[1]])}})
 
-# cat("Outputting trees from single segregating site locus in: ")
-# outfile_s <- paste(output, "single_trees", sep = "/")
-# single_trees <- coal_trees[which(uniq != "NULL")]
-# write(single_trees, file=outfile_s)
-# cmd <- paste("tar -cvzf", paste(outfile_s,"tar.gz", sep = "."), outfile_s, "--remove-files", sep = " ")
-# system(cmd, wait=T)
+cat("Outputting trees from single segregating site locus in: ")
+outfile_s <- paste(output, "single_trees", sep = "/")
+single_trees <- coal_trees[which(uniq != "NULL")]
+write(single_trees, file=outfile_s)
+cmd <- paste("tar -cvzf", paste(outfile_s,"tar.gz", sep = "."), outfile_s, "--remove-files", sep = " ")
+system(cmd, wait=T)
 
 cat("step 2 : sites \n")
 
