@@ -7,7 +7,7 @@ NE=100000
 #
 # The mutation rate per locus.
 #
-MU=1e-7
+MU=2.5e-6
 #
 #
 # Number of generation between the coalescent merging leading to the root of

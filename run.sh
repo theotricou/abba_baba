@@ -27,39 +27,3 @@ else
   echo
 
 fi
-
-squeue  | grep launch | awk '{print $1}' > ll
-
-while read -r line; do
-  scontrol release $line
-done < ll
-
-
-
-for i in `seq 10000 1 10099`; do
-  sed "s/SEED/$i/g" ../rep.sh > temp$i
-  sbatch temp$i && rm temp$i
-done
-
-
-
-dir=666
-seaview test\_$dir/spe_tree &
-more slurm.sim\_$dir*out
-
-R
-a = read.table('test_666/data.txt', h =T)
-b =  a[a$Pvalue < 0.001,]
-
-nrow(b)
-nrow(b[b$type_D == "P3" & b$type_R == "P1",])
-nrow(b[b$type_D == "P3" & b$type_R == "P2",])
-nrow(b[b$type_D == "P1" & b$type_R == "P3",])
-nrow(b[b$type_D == "P2" & b$type_R == "P3",])
-nrow(b[b$type_D == "P4",])
-nrow(b[b$type_R == "P4",])
-
-
-nrow(b[b$type_D == "N3",])
-nrow(b[b$type_D == "N2",])
-nrow(b[b$type_D == "N1",])
