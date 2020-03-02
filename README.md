@@ -23,12 +23,3 @@ You need to be sudo to perform this task.
 ZOMBi version in the singularity container is up to the commit 21d562cc380fafca58a7068913f4a17f52c60451
 If you are using an up to date ZOMBI you will have to use ZOMBI/Partameters/SpeciesTreeParameters.tsv instead of abba_baba/Parameters/zombi_parameters.
 This can lead to unforeseen bugs!
-
-
-<!--
-for i in `seq 2999 1 3099`; do
- sed "s/aaaa/$i/g" run_slurm.sh > temp
- sbatch temp
- rm temp
-done
- -->
