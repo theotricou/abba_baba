@@ -1,56 +1,18 @@
 #!/usr/bin/env Rscript
 # Théo
 
-
 cat("Starting ms simulation \n")
 args = commandArgs(trailingOnly=TRUE)
 
 cat("step 1 : initializing \n")
 
-# source2 <- function(file, start, end, ...) {
-#     file.lines <- scan(file, what=character(), skip=start-1, nlines=end-start+1, sep='\n')
-#     file.lines.collapsed <- paste(file.lines, collapse='\n')
-#     source(textConnection(file.lines.collapsed), ...)
-# }
-
-# if (length(args) == 0) {
-#   if(file.exists("Simulation/ms_command.R")) {
-#     source("Simulation/ms_command.R")
-#     source("Parameters/sim_parameters")
-#     output = "Simulation"
-#   } else {
-#     print("You need to create a ms command by running build_ms_command.py to run this script")
-#     quit()
-#   }
-# } else if (length(args) == 1) {
-#   source(args[1])
-#   path = strsplit(args[1], "/")[[1]]
-#   output = paste(path[seq(1,length(path) -1)], collapse = '/')
-#   source2(paste(output, paste("Param_", output, sep = ""), sep = "/"),37,85)
-#   if (length(path) == 1) {output = "./"} else {output = paste(path[seq(1,length(path) -1)], collapse = '/')}
-# } else if (length(args) == 2) {
-#   source(args[1])
-#   output = args[2]
-# } else {
-#   print("Too much argument were given, only the two first one will be used as input and output respectively")
-#   source(args[1])
-#   path = strsplit(args[2], "/")[[1]]
-#   if (length(path) == 1) {output = "./"} else {output = paste(path[seq(1,length(path) -1)], collapse = '/')}
-# }
-
-# source(args[1])
-# source(args[2])
-# path = strsplit(args[1], "/")[[1]]
-# output = paste(path[seq(1,length(path) -1)], collapse = '/')
-
 output=args[1]
-source(paste(args[1],"ms_command.R", sep ="/"))
-source(paste(args[1],"sim_parameters", sep ="/"))
+source(paste(output,"ms_command.R", sep ="/"))
+source(paste(output,"sim_parameters", sep ="/"))
 
 
 is_abba <- function(seg_site){if(sum(seg_site) == 2 & seg_site[1] == seg_site[4]){return(1)} else {return(0)}}
 is_baba <- function(seg_site){if(sum(seg_site) == 2 & seg_site[1] == seg_site[3]){return(1)} else {return(0)}}
-
 
 validateandreorder<-function(arr, dist) {
   # created by Damien
@@ -62,9 +24,8 @@ validateandreorder<-function(arr, dist) {
 }
 
 getquatuors<-function(tr) {
-  # created by Damien, modified by Theo
-  # dist<-cophenetic(compute.brlen(tr)) # compute.brlen used to get rid of uneven branch length
-  dist<-round(cophenetic(tr),3) # this is a dangerous thing to do
+  # created by Damien
+  dist<-cophenetic(tr)
   allquat<-combn(tr$tip.label,4)
   RES<-do.call(rbind,apply(allquat, 2, function(x) validateandreorder(x, dist)))
   return(RES)
@@ -133,8 +94,8 @@ D_stat <- function(stat_simulation, quatuor){
   p3 = pop[P3]
   P4 = as.integer(strsplit(quatuor[4], "@")[[1]][1])
   p4 = pop[P4]
-  abba <- sum(apply(sites[c(p1, p2, p3, p4),], 2, function(x) is_abba(x)))
-  baba <- sum(apply(sites[c(p1, p2, p3, p4),], 2, function(x) is_baba(x)))
+  abba <- sum(apply(stat_simulation[c(p1, p2, p3, p4),], 2, function(x) is_abba(x)))
+  baba <- sum(apply(stat_simulation[c(p1, p2, p3, p4),], 2, function(x) is_baba(x)))
   if ((abba + baba) != 0) {D = (abba - baba) / (abba + baba)} else {D = 0}
   ng_p3 <- as.integer(strsplit(spnd[mrca.phylo(tree, c(P1, P3))], "@")[[1]][2])
   ng_p4 <- as.integer(strsplit(spnd[mrca.phylo(tree, c(P1, P4))], "@")[[1]][2])
@@ -156,13 +117,8 @@ for (i in 2:length(pop)) {pop[i] <- pop[i-1] + pop[i]}
 
 cat("step 2 : running simmulation \n")
 
-if (SEED == 0) {
-  rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE)
-} else {
-  rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE, seed = SEED)
-}
-
-
+if (SEED == 0) {rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE)
+} else {rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE, seed = SEED)}
 
 # coal_trees <- c()
 # for (i in 1:length(rep)) {coal_trees[i] <- rep[[i]]$trees[[1]]}
@@ -175,7 +131,7 @@ if (SEED == 0) {
 cat("step 2 : uniq \n")
 
 uniq <- lapply(rep, function(x){
-  if (ncol(x$seg_sites[[1]][[1]]) == 1) {
+  if (ncol(x$seg_sites[[1]]) == 1) {
       return(x$seg_sites[[1]][[1]])}})
 
 # cat("Outputting trees from single segregating site locus in: ")
@@ -187,14 +143,8 @@ uniq <- lapply(rep, function(x){
 
 cat("step 2 : sites \n")
 
-
 sites <- do.call("cbind", uniq)
 sites <- sites[, colSums(sites != 0) > 1]
-
-# sites <- c()
-# for (i in 1:length(uniq)) {
-#   if (length(uniq[[i]]) != 0 & sum(uniq[[i]]) > 1) {
-#     sites <- cbind(sites, uniq[[i]])}}
 
 topologies <- getquatuors(tr)
 spnd<-c(tree$tip.label, tree$node.label)
@@ -203,7 +153,6 @@ true_recip = which(spnd == name_recip) # from variable in sourced file
 
 cat("step 3 : computing summary statistics \n")
 
-# results <- ((apply(topologies, 1, function(x) D_stat(sites, x)))) # bottleneck
 results <- as.data.frame(t(apply(topologies, 1, function(x) D_stat(sites, x)))) # bottleneck
 
 cat("step 4 : output \n")
