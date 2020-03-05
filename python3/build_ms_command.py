@@ -45,7 +45,7 @@ def tree_new_dist(tree, n_genaration_to_root):
     for i in tree:
         if i.is_leaf():
             if i.get_distance(tree) > n_genaration_to_root:
-                i.dist = int(i.dist - (i.get_distance(tree) - n_genaration_to_root))
+                i.dist = int(i.dist - (i.get_distance(tree) - n_genaration_to_root)) + t.dist
     return(tree)
 
 def alive_at_time(tree, time):
@@ -91,8 +91,9 @@ else:
 
 
 t = tr(args.tree, format = 1) # read phylo tree
-t.dist = 0
+t.dist = 5
 t = tree_new_dist(t, n_genaration_to_root)
+t.dist = 0
 sample = []
 if os.path.isfile(os.path.join(*args.tree.split('/')[0:-2], "SAMPLE_1/SampledSpeciesTree.nwk")):
     ts = tr(os.path.join(*args.tree.split('/')[0:-2], "SAMPLE_1/SampledSpeciesTree.nwk"), format = 1) # read phylo extant tree
