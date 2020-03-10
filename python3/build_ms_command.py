@@ -130,7 +130,8 @@ pop_donor = pop_recip = False
 while any_descendant_alive(t, pop_recip) == False:
     time_mig = int(np.random.uniform(0, n_genaration_to_root))
     all_node =  alive_at_time(t, time_mig)
-    pop_donor, pop_recip = np.random.choice(all_node, size = 2, replace = False)
+    if len(all_node) >= 2:
+        pop_donor, pop_recip = np.random.choice(all_node, size = 2, replace = False)
 
 # migration Parameters
 migration_generation = 1 # number of generation during which the population migrate

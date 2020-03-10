@@ -55,6 +55,16 @@ legend("topleft",
 
 
 
+
+
+
+
+
+
+
+
+
+
 df <- data.frame(level=factor(level),outside=per_error)
 plot(df, col = "red", cex = 0.1, cex.lab  = 1 , cex.axis = 0.7, las = 1,
 xlab = "Distance between P3 and P4",
