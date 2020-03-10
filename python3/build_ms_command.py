@@ -137,7 +137,7 @@ migration_generation = 1 # number of generation during which the population migr
 migration_fraction = 0.1 # fraction of the donor population that migrate in recipient population, during migration_generation generations
 migration_time = migration_generation / (4 * Ne) # time of the migration in 4Ne
 migration_rate = migration_fraction / migration_time # miogration rate for ms given the fraction and length
-migration_start = time_mig / (4 * Ne) # time at which migrattion star given the donor et the length of the migration
+migration_start = (n_genaration_to_root - time_mig) / (4 * Ne) # time at which migrattion star given the donor et the length of the migration
 migration_end = migration_start + migration_time # time at which the migration stop
 # mutation parameter
 mutation_rate = len_locus * 4 * Ne * mu
