@@ -1,6 +1,78 @@
 #!/usr/bin/env Rscript)
 # Théo
 
+for i in tes*/data*; do
+  sed "1d" $i >> second
+done
+
+R
+
+
+data = read.table('second')
+colnames(data) <- c("P1","P2","P3","P4","abba","baba","Dstat","Pvalue","d_p13_p14","type_D","type_R")
+
+sub = data[data$Pvalue < 0.05,]
+options(scipen=999)
+
+min = seq(0,990000 ,100000)
+max = seq(100000, 1000000, 100000)
+level = as.factor(paste(min, max, sep='\n'))
+par(mfrow=c(1,3))
+
+H1 = c()
+H2 = c()
+H2e = c()
+H2c = c()
+for (i in 1:length(min)) {
+  a = sub[sub$d_p13_p14 > min[i] & sub$d_p13_p14 <= max[i],]
+  H1[i] = sum(nrow(a[a$type_D == "P3" & a$type_R == "P1",]),
+  nrow(a[a$type_D == "P3" & a$type_R == "P2",]),
+  nrow(a[a$type_D == "P1" & a$type_R == "P3",]),
+  nrow(a[a$type_D == "P2" & a$type_R == "P3",]))
+  H2[i] = sum(nrow(a[a$type_D == "N2" & a$type_R == "P1",]),
+  nrow(a[a$type_D == "N2" & a$type_R == "P2",]))
+  H2e[i] = sum(H2[i],
+  nrow(a[a$type_D == "P4" & a$type_R == "P1",]),
+  nrow(a[a$type_D == "P4" & a$type_R == "P2",]))
+  H2c[i] = sum(H2e[i],
+  nrow(a[a$type_D == "N3" & a$type_R == "P1",]),
+  nrow(a[a$type_D == "N3" & a$type_R == "P2",]))
+}
+per_error=H2/(H1+H2)
+per_error_ext=H2e/(H1+H2e)
+per_error_com=H2c/(H1+H2c)
+rate <- rbind(per_error, per_error_ext, per_error_com)
+mp <- barplot(rate, beside = TRUE, cex = 0.75, cex.lab  = 1 , cex.axis = 0.7, las = 1,
+              ylim = c(0, 1.1),
+              main="ABBA/BABA test error rate",
+              names.arg = level,
+              xlab = "Distance between P3 and P4",
+              ylab = "Error rata",
+              col = c("red", "blue", "green"))
+legend("topleft",
+       legend = c("H2 error rate","H2ext error rate","H2com error rate"),
+       fill = c("red", "blue", "green"))
+
+
+
+df <- data.frame(level=factor(level),outside=per_error)
+plot(df, col = "red", cex = 0.1, cex.lab  = 1 , cex.axis = 0.7, las = 1,
+xlab = "Distance between P3 and P4",
+ylab = "Error rata",
+main = "ABBA/BABA test error rate")
+dfe <- data.frame(level=factor(level),outside=per_error_ext)
+plot(dfe, col = "red", cex = 0.1, cex.lab  = 1 , cex.axis = 0.7, las = 1,
+xlab = "Distance between P3 and P4",
+ylab = "Error rata",
+main = "ABBA/BABA test error rate")
+dfc <- data.frame(level=factor(level),outside=per_error_com)
+plot(df, col = "red", cex = 0.1, cex.lab  = 1 , cex.axis = 0.7, las = 1,
+xlab = "Distance between P3 and P4",
+ylab = "Error rata",
+main = "ABBA/BABA test error rate")
+
+
+
 # global stat
 data = read.table('second')
 colnames(data) <- c("P1","P2","P3","P4","abba","baba","Dstat","Pvalue","d_p13_p14","type_D","type_R")
@@ -63,7 +135,6 @@ vnh1=integer(),vnh2=integer(),vnh2e=integer(),vnh2c=integer()
 for (i in 1:length(unit)) {
   tempp = data[data$d_p13_p14 <= unit[i] & data$Pvalue <= 0.001,]
   tempn = data[data$d_p13_p14 <= unit[i] & data$Pvalue > 0.001,]
-
   df[i, "unit"] = unit[i]
 
   df[i, "vph1"] = sum(nrow(tempp[tempp$type_D == "P3" & tempp$type_R == "P1",]),
@@ -110,6 +181,53 @@ points(df$unit, (df$fph2), col = "orange", pch = 20, cex = 0.5)
 points(df$unit, (df$fph2e), col = "lightblue", pch = 20, cex = 0.5)
 points(df$unit, (df$fph2c), col = "lightgreen", pch = 20, cex = 0.5)
 
+
+
+
+sum(nrow(sub[sub$type_D == "N2" & sub$type_R == "P1",]),
+  nrow(sub[sub$type_D == "N2" & sub$type_R == "P2",]))
+
+
+
+sum(nrow(sub[sub$type_D == "P3" & sub$type_R == "P1",]),
+  nrow(sub[sub$type_D == "P3" & sub$type_R == "P2",]),
+  nrow(sub[sub$type_D == "P1" & sub$type_R == "P3",]),
+  nrow(sub[sub$type_D == "P2" & sub$type_R == "P3",]))
+
+
+
+library('ggplot2')
+
+
+data = as.data.frame(t(rbind(levels(level), per_error)))
+colnames(data) = c("range","error")
+data$error = as.numeric(as.character(data$error))
+
+ggplot(data=data, aes(x=range, y=error)) + geom_boxplot() +
+coord_cartesian(ylim = c(0, 1))
+
+ggplot(data=data,                             # Define the data to plot
+       aes(x=vore,
+           fill=vore)) +                        # Define how bars are coloured
+  geom_bar() +
+  scale_x_discrete(name = 'Feeding Type',
+                   labels=labs) +
+  scale_fill_discrete(name = 'Feeding Type',
+                      labels=labs) +
+  labs(x='Feeding Type',
+       y='Number of Species') +
+  theme_bw()
+
+Ordonnons les modalités d'absentéisme
+etudiants$abs <- ordered(etudiants$abs, levels = c("0-1", ">1"))
+par(mfrow = c(1, 2))
+# Pour avoir deux graphiques côte à côte
+boxplot(etudiants$note~etudiants$mBac+etudiants$abs, main = "Mention au bac et absentéisme",
+xlab = "Mention au bac et absentéisme", ylab = "Note en MathSV sur 20", las = 1,
+ col = c("pink", "grey", "lightblue"), varwidth = TRUE, notch = TRUE)
+ boxplot(etudiants$note~etudiants$abs+etudiants$mBac, main = "Absentéisme et mention au bac",
+  xlab = "Absentéisme et mention au bac", ylab = "Note en MathSV sur 20", las = 1,
+   col = rep(c("pink", "grey", "lightblue"), each = 2), varwidth = TRUE, notch = TRUE)
 
 
 # all

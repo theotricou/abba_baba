@@ -39,19 +39,19 @@ def read_param(string):
 
 def tree_new_dist(tree, n_genaration_to_root):
     multi = n_genaration_to_root / tree.get_farthest_leaf()[1]
-    for i in tree.traverse():
-        if i.is_leaf():i.dist = int(round(i.dist * multi))
-        else : i.dist = int(round(i.dist * multi) + 1)
-    for i in tree:
+    for i in t.traverse():
         if i.is_leaf():
-            if i.get_distance(tree) > n_genaration_to_root:
-                i.dist = int(i.dist - (i.get_distance(tree) - n_genaration_to_root)) + t.dist
+            i.dist = int((i.dist * multi)//1)
+            if i.name in sample:
+                i.dist = n_genaration_to_root - i.up.get_distance(t)
+        else :
+            i.dist = int((i.dist * multi)//1)
     return(tree)
 
 def alive_at_time(tree, time):
     results = []
     for i in tree.iter_descendants():
-        if i.up.dist < time & time < i.get_distance(t):
+        if i.up.get_distance(t) < time & time < i.get_distance(t):
             results.append(i)
     return(results)
 
@@ -89,11 +89,8 @@ else:
         random.seed(int(read_param("SEED")))
         np.random.seed(int(read_param("SEED")))
 
-
 t = tr(args.tree, format = 1) # read phylo tree
-t.dist = 5
-t = tree_new_dist(t, n_genaration_to_root)
-t.dist = 0
+
 sample = []
 if os.path.isfile(os.path.join(*args.tree.split('/')[0:-2], "SAMPLE_1/SampledSpeciesTree.nwk")):
     ts = tr(os.path.join(*args.tree.split('/')[0:-2], "SAMPLE_1/SampledSpeciesTree.nwk"), format = 1) # read phylo extant tree
@@ -101,6 +98,8 @@ if os.path.isfile(os.path.join(*args.tree.split('/')[0:-2], "SAMPLE_1/SampledSpe
 else:
     te = tr(os.path.join(*args.tree.split('/')[0:-1], "ExtantTree.nwk"), format = 1) # read phylo extant tree
     for i in te: sample.append(i.name)
+
+t = tree_new_dist(t, n_genaration_to_root)
 
 # variables for the outputing of the source code for R
 Head = D_R = Pop = Coal = Merge = Migration_starts = Migration_ends = Stat_sum = True_migration = str() # coal_model extended parameters
@@ -112,8 +111,7 @@ for i in t.traverse('postorder'):
             ext_lineages.append(1)
         else:
             ext_lineages.append(0)
-        temp_ = str(int(n_genaration_to_root - i.get_distance(t)))
-        i.name = str(count) + "@" + temp_
+        i.name = str(count) + "@" + str(int(n_genaration_to_root - i.get_distance(t)))
         count += 1
     else:
         pop_d = str(gene_n(i.get_descendants()[0])).split("_")[0]
