@@ -57,6 +57,90 @@ legend("topleft",
 
 
 
+### diversification comparaison
+
+data00 = read.table('00_div/second')
+data01 = read.table('01_div/second')
+data05 = read.table('05_div/second')
+data09 = read.table('09_div/second')
+colnames(data00) <- c("P1","P2","P3","P4","abba","baba","Dstat","Pvalue","d_p13_p14","type_D","type_R")
+colnames(data01) <- c("P1","P2","P3","P4","abba","baba","Dstat","Pvalue","d_p13_p14","type_D","type_R")
+colnames(data05) <- c("P1","P2","P3","P4","abba","baba","Dstat","Pvalue","d_p13_p14","type_D","type_R")
+colnames(data09) <- c("P1","P2","P3","P4","abba","baba","Dstat","Pvalue","d_p13_p14","type_D","type_R")
+options(scipen=999)
+
+sub00 = data00[data00$Pvalue < 0.05,]
+sub01 = data01[data01$Pvalue < 0.05,]
+sub05 = data05[data05$Pvalue < 0.05,]
+sub09 = data09[data09$Pvalue < 0.05,]
+
+bin = 200000
+
+min = seq(0,1000000 - bin ,bin)
+max = seq(bin, 1000000, bin)
+level = as.factor(paste(min, max, sep='\n'))
+
+H100 =  c()
+H200 =  c()
+H101 =  c()
+H201 =  c()
+H205 =  c()
+H105 =  c()
+H109 = c()
+H209 = c()
+for (i in 1:length(min)) {
+  a00 = sub00[sub00$d_p13_p14 > min[i] & sub00$d_p13_p14 <= max[i],]
+  H100[i] = sum(nrow(a00[a00$type_D == "P3" & a00$type_R == "P1",]),
+  nrow(a00[a00$type_D == "P3" & a00$type_R == "P2",]),
+  nrow(a00[a00$type_D == "P1" & a00$type_R == "P3",]),
+  nrow(a00[a00$type_D == "P2" & a00$type_R == "P3",]))
+  H200[i] = sum(nrow(a00[a00$type_D == "N2" & a00$type_R == "P1",]),
+  nrow(a00[a00$type_D == "N2" & a00$type_R == "P2",]))
+
+  a01 = sub01[sub01$d_p13_p14 > min[i] & sub01$d_p13_p14 <= max[i],]
+  H101[i] = sum(nrow(a01[a01$type_D == "P3" & a01$type_R == "P1",]),
+  nrow(a01[a01$type_D == "P3" & a01$type_R == "P2",]),
+  nrow(a01[a01$type_D == "P1" & a01$type_R == "P3",]),
+  nrow(a01[a01$type_D == "P2" & a01$type_R == "P3",]))
+  H201[i] = sum(nrow(a01[a01$type_D == "N2" & a01$type_R == "P1",]),
+  nrow(a01[a01$type_D == "N2" & a01$type_R == "P2",]))
+
+  a05 = sub05[sub05$d_p13_p14 > min[i] & sub05$d_p13_p14 <= max[i],]
+  H105[i] = sum(nrow(a05[a05$type_D == "P3" & a05$type_R == "P1",]),
+  nrow(a05[a05$type_D == "P3" & a05$type_R == "P2",]),
+  nrow(a05[a05$type_D == "P1" & a05$type_R == "P3",]),
+  nrow(a05[a05$type_D == "P2" & a05$type_R == "P3",]))
+  H205[i] = sum(nrow(a05[a05$type_D == "N2" & a05$type_R == "P1",]),
+  nrow(a05[a05$type_D == "N2" & a05$type_R == "P2",]))
+
+  a09 = sub09[sub09$d_p13_p14 > min[i] & sub09$d_p13_p14 <= max[i],]
+  H109[i] = sum(nrow(a09[a09$type_D == "P3" & a09$type_R == "P1",]),
+  nrow(a09[a09$type_D == "P3" & a09$type_R == "P2",]),
+  nrow(a09[a09$type_D == "P1" & a09$type_R == "P3",]),
+  nrow(a09[a09$type_D == "P2" & a09$type_R == "P3",]))
+  H209[i] = sum(nrow(a09[a09$type_D == "N2" & a09$type_R == "P1",]),
+  nrow(a09[a09$type_D == "N2" & a09$type_R == "P2",]))
+
+}
+
+per_error00=H200/(H100+H200)
+per_error01=H201/(H101+H201)
+per_error05=H205/(H105+H205)
+per_error09=H209/(H109+H209)
+
+
+rate <- rbind(per_error00, per_error01, per_error05, per_error09)
+
+mp <- barplot(rate, beside = TRUE, cex = 0.75, cex.lab  = 1 , cex.axis = 0.7, las = 1,
+              ylim = c(0, 1.1),
+              main="ABBA/BABA test error rate",
+              names.arg = level,
+              xlab = "Distance between P3 and P4",
+              ylab = "Error rata",
+              col = c("red", "blue", "green", "black"))
+legend("topleft", title = "Diversification rate (extinction rate/speciation rate)",
+       legend = c("0,0","0,1","0,5", "0,9"),
+       fill = c("red", "blue", "green", "black"))
 
 
 
