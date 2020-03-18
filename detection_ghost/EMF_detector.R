@@ -8,6 +8,131 @@ done
 R
 
 
+dir = c('00_div', '01_div', '05_div', '09_div')
+seed = seq(0,499)
+min = seq(0,990000 ,100000)
+max = seq(100000, 1000000, 100000)
+
+
+
+d0 <- data.frame(matrix(0, nrow = length(seed), ncol = length(max)))
+colnames(d0) <- max
+d1 <- data.frame(matrix(0, nrow = length(seed), ncol = length(max)))
+colnames(d1) <- max
+d5 <- data.frame(matrix(0, nrow = length(seed), ncol = length(max)))
+colnames(d5) <- max
+d9 <- data.frame(matrix(0, nrow = length(seed), ncol = length(max)))
+colnames(d9) <- max
+
+
+error_rate <- function(dir,data) {
+  for (j in 1:499) {
+    path = paste(dir, '/test', (1000 + seed[j]), "/data.txt", sep = "")
+    sub = read.table(path, h = T)
+    H1 = c()
+    H2 = c()
+    min = seq(0,990000 ,100000)
+    max = seq(100000, 1000000, 100000)
+    for (i in 1:length(min)) {
+      a = sub[sub$d_p13_p14 > min[i] & sub$d_p13_p14 <= max[i],]
+      H1[i] = sum(
+        nrow(a[a$type_D == "P3" & a$type_R == "P1",]),
+        nrow(a[a$type_D == "P3" & a$type_R == "P2",]),
+        nrow(a[a$type_D == "P1" & a$type_R == "P3",]),
+        nrow(a[a$type_D == "P2" & a$type_R == "P3",]))
+      H2[i] = sum(
+        nrow(a[a$type_D == "N2" & a$type_R == "P1",]),
+        nrow(a[a$type_D == "N2" & a$type_R == "P2",]))
+    }
+    data[j,] = H2/(H1+H2)
+  }
+  return(data)
+}
+d0 = error_rate("00_div", d0)
+d1 = error_rate("01_div", d1)
+d5 = error_rate("05_div", d5)
+d9 = error_rate("09_div", d9)
+
+
+boxplot(d0, na.action = na.omit, varwidth = T)
+boxplot(d9, na.action = na.omit, varwidth = T)
+
+mydf <- data.frame(y=c(d0,d1,d5,d9),x=c(rep(1,length(d0)),rep(2,length(d1)),rep(3,length(d5)),rep(4,length(d9))))
+
+path = paste("00_div/test', (1000 + seed[j]), "/data.txt", sep = "")
+sub = read.table("00_div/test1000/data.txt", h = T)
+sub = sub[sub$Pvalue <= 0.05,]
+H1 = c()
+H2 = c()
+min = seq(0,990000 ,100000)
+max = seq(100000, 1000000, 100000)
+
+a = sub
+H1[i] = sum(
+  nrow(a[a$type_D == "P3" & a$type_R == "P1",]),
+  nrow(a[a$type_D == "P3" & a$type_R == "P2",]),
+  nrow(a[a$type_D == "P1" & a$type_R == "P3",]),
+  nrow(a[a$type_D == "P2" & a$type_R == "P3",]))
+H2[i] = sum(
+  nrow(a[a$type_D == "N2" & a$type_R == "P1",]),
+  nrow(a[a$type_D == "N2" & a$type_R == "P2",]))
+
+for (i in 1:length(min)) {
+  a = sub[sub$d_p13_p14 > min[i] & sub$d_p13_p14 <= max[i],]
+  H1[i] = sum(
+    nrow(a[a$type_D == "P3" & a$type_R == "P1",]),
+    nrow(a[a$type_D == "P3" & a$type_R == "P2",]),
+    nrow(a[a$type_D == "P1" & a$type_R == "P3",]),
+    nrow(a[a$type_D == "P2" & a$type_R == "P3",]))
+  H2[i] = sum(
+    nrow(a[a$type_D == "N2" & a$type_R == "P1",]),
+    nrow(a[a$type_D == "N2" & a$type_R == "P2",]))
+}
+data[j,] = H2/(H1+H2)
+}
+return(data)
+
+
+for (i in 1:4) {
+  for (j in 1:500) {
+    path = paste(dir[i], '/test', (1000 + seed[j]), sep = "")
+    file = read.data(path, h = T)
+    for (i in 1:length(min)) {
+      a = sub[sub$d_p13_p14 > min[i] & sub$d_p13_p14 <= max[i],]
+      H1[i] = sum(
+        nrow(a[a$type_D == "P3" & a$type_R == "P1",]),
+        nrow(a[a$type_D == "P3" & a$type_R == "P2",]),
+        nrow(a[a$type_D == "P1" & a$type_R == "P3",]),
+        nrow(a[a$type_D == "P2" & a$type_R == "P3",]))
+      H2[i] = sum(
+        nrow(a[a$type_D == "N2" & a$type_R == "P1",]),
+        nrow(a[a$type_D == "N2" & a$type_R == "P2",]))
+      d0[j,] = H2/(H1+H2)
+    }
+  }
+}
+
+
+
+
+for (i in 1:length(min)) {
+  a = sub[sub$d_p13_p14 > min[i] & sub$d_p13_p14 <= max[i],]
+  H1[i] = sum(nrow(a[a$type_D == "P3" & a$type_R == "P1",]),
+  nrow(a[a$type_D == "P3" & a$type_R == "P2",]),
+  nrow(a[a$type_D == "P1" & a$type_R == "P3",]),
+  nrow(a[a$type_D == "P2" & a$type_R == "P3",]))
+  H2[i] = sum(nrow(a[a$type_D == "N2" & a$type_R == "P1",]),
+  nrow(a[a$type_D == "N2" & a$type_R == "P2",]))
+  H2e[i] = sum(H2[i],
+  nrow(a[a$type_D == "P4" & a$type_R == "P1",]),
+  nrow(a[a$type_D == "P4" & a$type_R == "P2",]))
+  H2c[i] = sum(H2e[i],
+  nrow(a[a$type_D == "N3" & a$type_R == "P1",]),
+  nrow(a[a$type_D == "N3" & a$type_R == "P2",]))
+}
+
+
+
 data = read.table('second')
 colnames(data) <- c("P1","P2","P3","P4","abba","baba","Dstat","Pvalue","d_p13_p14","type_D","type_R")
 
@@ -74,7 +199,7 @@ sub01 = data01[data01$Pvalue < 0.05,]
 sub05 = data05[data05$Pvalue < 0.05,]
 sub09 = data09[data09$Pvalue < 0.05,]
 
-bin = 200000
+bin = 100000
 
 min = seq(0,1000000 - bin ,bin)
 max = seq(bin, 1000000, bin)
@@ -128,22 +253,32 @@ per_error01=H201/(H101+H201)
 per_error05=H205/(H105+H205)
 per_error09=H209/(H109+H209)
 
+sum00=H100+H200
+sum01=H101+H201
+sum05=H105+H205
+sum09=H109+H209
 
 rate <- rbind(per_error00, per_error01, per_error05, per_error09)
 
+affec <- rbind(sum00, sum01, sum05, sum09)
+
+pdf("ABBA_BABA_error_rate.pdf",width=29.7/2.54, height=21/2.54)
+
 mp <- barplot(rate, beside = TRUE, cex = 0.75, cex.lab  = 1 , cex.axis = 0.7, las = 1,
-              ylim = c(0, 1.1),
+              ylim = c(0,1.1),
               main="ABBA/BABA test error rate",
               names.arg = level,
               xlab = "Distance between P3 and P4",
               ylab = "Error rata",
               col = c("red", "blue", "green", "black"))
 legend("topleft", title = "Diversification rate (extinction rate/speciation rate)",
-       legend = c("0,0","0,1","0,5", "0,9"),
-       fill = c("red", "blue", "green", "black"))
+       legend = c("0,0","0,1","0,5", "0,9", "effectif"),
+       fill = c("red", "blue", "green", "black", "white"))
 
 
+text(mp, rate, labels = format(affec, 5), pos = 3, cex = .3)
 
+dev.off()
 
 
 
