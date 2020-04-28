@@ -16,10 +16,13 @@ if [ ! -d "$dir" ]; then
 
   singularity run $singularity python /simulation/ZOMBI/Zombi.py T $dir/zombi_parameters $dir
 
+  #singularity run $singularity python /simulation/ZOMBI/SpeciesSampler.py n 20 $dir
+
   singularity run $singularity python ${path%run.sh}python3/build_ms_command.py $dir/T/CompleteTree.nwk -p $dir/sim_parameters -o $dir -v
 
   singularity run $singularity Rscript ${path%run.sh}R/ms_simulation.R $dir
 
+  singularity run $singularity Rscript ${path%run.sh}R/D3.R $dir
 else
 
   echo
@@ -27,49 +30,3 @@ else
   echo
 
 fi
-
-
-
-for j in div*; do
-  cd $j
-  for i in `seq 666 1 765`; do
-    sed "s/aaaa/$i/g" run_slurm.sh > temp
-    sbatch temp
-    rm temp
-  done
-  cd ..
-done
-
-rm second
-for i in tes*/data*; do
-  sed "1d" $i >> second
-done
-
-
-# test on N2 donor
-grep " [0-9]*@[1-9]" tes*/ms_command.R
-
-
-for i in `seq 1000 1 1000`; do
-  sed "s/aaaa/$i/g" run_slurm.sh > temp
-  # sbatch temp
-  # rm temp
-done
-
-
-for i in `seq 1300 1 1499`;do
-  sed "s/aaaa/$i/g" run_slurm.sh > temp
-  sbatch temp
-  rm temp
-done
-
-
-
-for i in `seq 1100 1 1299`;do
-  if [ ! -f test$i/ms_command.R ];then
-    rm -rf test$i
-    sed "s/aaaa/$i/g" run_slurm.sh > temp
-    sbatch temp
-    rm temp
-  fi
-done

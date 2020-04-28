@@ -7,6 +7,7 @@ args = commandArgs(trailingOnly=TRUE)
 cat("step 1 : initializing \n")
 
 output=args[1]
+# output="./"
 source(paste(output,"ms_command.R", sep ="/"))
 source(paste(output,"sim_parameters", sep ="/"))
 
@@ -63,6 +64,7 @@ where_is_Daldo <- function(tree, donor, p1, p2, p3, p4) {
 where_is_Raldo <- function(tree, recip, p1, p2, p3, p4) {
   if (recip == p1) { return("P1")}
   else if (recip == p2) { return("P2")}
+
   else if (recip == p3) { return("P3")}
   else if (recip == p4) { return("P4")}
   else {
@@ -102,11 +104,12 @@ D_stat <- function(stat_simulation, quatuor){
   dist_p13_p14 <- ng_p4 - ng_p3
   donor = where_is_Daldo(tree, true_donor, P1, P2, P3, P4)
   recip = where_is_Raldo(tree, true_recip, P1, P2, P3, P4)
-  data <- c("P1" = P1, "P2" = P2, "P3" = P3, "P4" = P4,
-  "abba" = abba, "baba" = baba, "Dstat" = D,
+  data <- c("P1" = quatuor[1], "P2" = quatuor[2],
+  "P3" = quatuor[3], "P4" = quatuor[4],
+  "abba" = abba, "baba" = baba, "D" = D,
   "Pvalue" = binom.test(c(abba, baba), p = 0.5, conf.level= 0.99)$p.value,
-  "d_p13_p14" = dist_p13_p14,
-  "type_D" = donor, "type_R" = recip)
+  "d_N2" = dist_p13_p14,
+  "Donor" = donor, "Recip" = recip)
   return(data)
 }
 
@@ -115,10 +118,26 @@ tr = keep.tip(tree, tree$tip.label[which(pop == 1)])
 
 for (i in 2:length(pop)) {pop[i] <- pop[i-1] + pop[i]}
 
-cat("step 2 : running simmulation \n")
+cat("step 2 : running simulation \n")
+
+
+### test repro when using multiple core
+###
 
 if (SEED == 0) {rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE)
-} else {rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE, seed = SEED)}
+} else {
+  library(parallel)
+  RNGkind("L'Ecuyer-CMRG")
+  set.seed(SEED)
+  M <- N_CORE
+  s <- .Random.seed
+  for (i in 1:M){s <- nextRNGStream(s)}
+  rep <- mclapply(X = 1:N_SIMULATION,
+               FUN = function(x) simulate(model),
+               mc.cores = M,
+               mc.set.seed = TRUE
+  )
+}
 
 # coal_trees <- c()
 # for (i in 1:length(rep)) {coal_trees[i] <- rep[[i]]$trees[[1]]}
@@ -134,12 +153,18 @@ uniq <- lapply(rep, function(x){
   if (ncol(x$seg_sites[[1]]) == 1) {
       return(x$seg_sites[[1]][[1]])}})
 
-# cat("Outputting trees from single segregating site locus in: ")
-# outfile_s <- paste(output, "single_trees", sep = "/")
+
+
+cat("Outputting trees from single segregating site locus in: ")
+single_trees=unlist(lapply(which(uniq != "NULL"), function(x) rep[[x]]$trees[[1]]))
+outfile_s <- paste(output, "trees", sep = "/")
 # single_trees <- coal_trees[which(uniq != "NULL")]
-# write(single_trees, file=outfile_s)
+write(single_trees, file=outfile_s)
 # cmd <- paste("tar -cvzf", paste(outfile_s,"tar.gz", sep = "."), outfile_s, "--remove-files", sep = " ")
-# system(cmd, wait=T)
+cmd <- paste("zip ",outfile_s,".zip ",outfile_s, sep="")
+system(cmd, wait=T)
+cmd <- paste("rm ",outfile_s, sep="")
+system(cmd, wait=T)
 
 cat("step 2 : sites \n")
 
