@@ -7,7 +7,6 @@ args = commandArgs(trailingOnly=TRUE)
 cat("step 1 : initializing \n")
 
 output=args[1]
-# output="./"
 source(paste(output,"ms_command.R", sep ="/"))
 source(paste(output,"sim_parameters", sep ="/"))
 
@@ -120,10 +119,6 @@ for (i in 2:length(pop)) {pop[i] <- pop[i-1] + pop[i]}
 
 cat("step 2 : running simulation \n")
 
-
-### test repro when using multiple core
-###
-
 if (SEED == 0) {rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE)
 } else {
   library(parallel)
@@ -139,28 +134,16 @@ if (SEED == 0) {rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE)
   )
 }
 
-# coal_trees <- c()
-# for (i in 1:length(rep)) {coal_trees[i] <- rep[[i]]$trees[[1]]}
-# cat("Outputting all trees from simualtion in: ")
-# outfile_a <- paste(output, "all_trees", sep = "/")
-# write(coal_trees, file=outfile_a)
-# cmd <- paste("tar -cvzf", paste(outfile_a,"tar.gz", sep = "."), outfile_a, "--remove-files", sep = " ")
-# system(cmd, wait=T)
-
 cat("step 2 : uniq \n")
 
 uniq <- lapply(rep, function(x){
   if (ncol(x$seg_sites[[1]]) == 1) {
       return(x$seg_sites[[1]][[1]])}})
 
-
-
 cat("Outputting trees from single segregating site locus in: ")
 single_trees=unlist(lapply(which(uniq != "NULL"), function(x) rep[[x]]$trees[[1]]))
 outfile_s <- paste(output, "trees", sep = "/")
-# single_trees <- coal_trees[which(uniq != "NULL")]
 write(single_trees, file=outfile_s)
-# cmd <- paste("tar -cvzf", paste(outfile_s,"tar.gz", sep = "."), outfile_s, "--remove-files", sep = " ")
 cmd <- paste("zip ",outfile_s,".zip ",outfile_s, sep="")
 system(cmd, wait=T)
 cmd <- paste("rm ",outfile_s, sep="")
@@ -180,9 +163,7 @@ cat("step 3 : computing summary statistics \n")
 
 results <- as.data.frame(t(apply(topologies, 1, function(x) D_stat(sites, x)))) # bottleneck
 
-cat("step 4 : output \n")
+cat("step 4 : output D\n")
 
 outfile_d <- paste(output, "data.txt", sep = "/")
 write.table(results, outfile_d, sep = "\t", row.names = F, append = F, quote=F)
-
-cat("End \n")

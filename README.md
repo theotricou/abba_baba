@@ -25,7 +25,7 @@ If you are using an up to date ZOMBI you will have to use ZOMBI/Partameters/Spec
 This can lead to unforeseen bugs!
 
 
-for i in `seq 1500 1 1500`; do
+for i in `seq 1500 1 1700`; do
   sed "s/aaaa/$i/g" run_slurm.sh > temp
   sbatch temp
   # rm temp

@@ -1,10 +1,11 @@
 #!/usr/bin/env Rscript
 # Théo
+cat("step 5 : computing D3\n")
+
 
 args = commandArgs(trailingOnly=TRUE)
 output=args[1]
 
-output="test669"
 source(paste(output,"ms_command.R", sep ="/"))
 
 spe<-read.tree(paste(output,"spe_tree", sep = "/"))
@@ -41,7 +42,7 @@ donor<-which(nodes == name_donor)
 recip<-which(nodes == name_recip)
 ord=sort(row.names(cophenetic(trees[[1]])))
 
-blocks<-seq(1,length(trees), by=1000)
+blocks<-seq(1,length(trees), by=50000)
 fromto<-cbind(blocks,c(blocks[-1]-1, length(trees)))
 list_submat<-lapply(1:length(blocks),function(x) devil_mambojambo(x))
 sum_mat<-Reduce('+',list_submat)
@@ -96,7 +97,10 @@ D3_v2<-function(matrice, trio){
     "Recip" = D3_recip)
   return(data)
 }
+cat("step 6 : output D3\n")
 
 results<-cbind(topologies,as.data.frame(t(apply(topologies, 1, function(x) D3_v2(sum_mat, x)))))
 outfile <- paste(output, "data_D3.txt", sep = "/")
 write.table(results, outfile, sep = "\t", row.names = F, append = F, quote=F)
+
+cat("End \n")
