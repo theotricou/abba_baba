@@ -31,60 +31,51 @@ getquatuors<-function(tr) {
   return(RES)
 }
 
-leafs_relatives <- function(tree, leaf, comp_leaf) {
-  all_anc_leaf <- c(leaf, Ancestors(tree, leaf, type = "all"))
-  first_son_leaf <- all_anc_leaf[match(mrca.phylo(tree, c(leaf, comp_leaf)), all_anc_leaf) - 1]
-  # only_anc_leaf <- all_anc_leaf[1:match(first_son_leaf, all_anc_leaf)]
-  des_leaf <- Descendants(tree, first_son_leaf, type = "all")
-  result <- list("a_anc" = all_anc_leaf, "firs" = first_son_leaf,  "des" = des_leaf) #"o_anc" = only_anc_leaf,
-  return(result)
+
+
+leaf_descendants <- function(p, p_ext) {
+  all_anc_leaf <- c(p, Ancestors(tree, p, type = "all"))
+  first_son_leaf <- all_anc_leaf[match(mrca.phylo(tree, c(p, p_ext)), all_anc_leaf) - 1]
+  des_leaf <- c(first_son_leaf,Descendants(tree, as.integer(first_son_leaf), type = "all"))
+  return(des_leaf)
 }
 
-where_is_Daldo <- function(tree, donor, p1, p2, p3, p4) {
-  if (donor == p1) { return("P1")}
-  else if (donor == p2) { return("P2")}
-  else if (donor == p3) { return("P3")}
-  else if (donor == p4) { return("P4")}
-  else {
-    if (!donor %in% Descendants(tree,mrca.phylo(tree, c(p1, p4)), type="all")) {return("N3")}
-    else {
-      if (!donor %in% Descendants(tree,mrca.phylo(tree, c(p1, p3)), type="all")) {
-        if (donor %in% leafs_relatives(tree, p4, p1)$des) {return("P4")}
-        else {return("N2")}
-      } else {
-        if (!donor %in% Descendants(tree,mrca.phylo(tree, c(p1, p2)), type="all")) {
-          if (donor %in% leafs_relatives(tree, p3, p1)$des) {return("P3")}
-          else {return("N1")}
-        } else {
-          if (donor %in% leafs_relatives(tree, p2, p1)$des) {return("P2")}
-          else {return("P1")}
-}}}}}
+leaf_ancestors<-function(p, p_ext){
+  all_anc <- c(p, Ancestors(tree, p, type = "all"))
+  anc_only <- all_anc[1:match(mrca.phylo(tree, c(p, p_ext)), all_anc) - 1]
+  return(anc_only)
+}
 
-where_is_Raldo <- function(tree, recip, p1, p2, p3, p4) {
-  if (recip == p1) { return("P1")}
-  else if (recip == p2) { return("P2")}
-
-  else if (recip == p3) { return("P3")}
-  else if (recip == p4) { return("P4")}
+where_is_Raldo<-function(p1,p2,p3,p4){
+  if (true_recip %in% leaf_ancestors(p1,p2)) { return("P1")}
+  else if (true_recip %in% leaf_ancestors(p2,p1)) { return("P2")}
+  else if (true_recip %in% leaf_ancestors(p3,p1)) { return("P3")}
+  else if (true_recip %in% leaf_ancestors(p4,p1)) { return("P4")}
   else {
-    if (!recip %in% Descendants(tree, mrca.phylo(tree, c(p1, p4)), type="all")){ return("N3")}
+    if (!true_recip %in% Descendants(tree,mrca.phylo(tree, c(p1, p4)), type="all")) {return("O")}
     else {
-      if (!recip %in% Ancestors(tree, p4) &
-      !recip %in% Ancestors(tree, p3) &
-      !recip %in% Ancestors(tree, p2) &
-      !recip %in% Ancestors(tree, p1)) {return("N3")}
-      else{
-        if (!recip %in% Descendants(tree, mrca.phylo(tree, c(p1, p3)), type="all")) {
-          if (recip %in% c(p4, Ancestors(tree, p4))) {return("P4")}
-          else {return("N2")}
-        } else {
-          if (!recip %in% Descendants(tree, mrca.phylo(tree, c(p1, p2)), type="all")) {
-            if (recip %in% c(p3, Ancestors(tree, p3))) {return("P3")}
-            else {return("N1")}
-          } else {
-            if (recip %in% c(p1, Ancestors(tree, p1))) {return("P1")}
-            else if (recip %in% c(p2, Ancestors(tree, p2))) {return("P2")}
-}}}}}}
+      if (true_recip %in% leaf_ancestors(p1,p3)) {return("N1")}
+      else {
+        if (true_recip %in% leaf_ancestors(p1,p4)) {return("N2")}
+        else {return("O")}
+      }
+    }
+  }
+}
+
+where_is_Daldo<-function(p1,p2,p3,p4){
+  if (true_donor %in% leaf_descendants(p1,p2)) { return("P1")}
+  else if (true_donor %in% leaf_descendants(p2,p1)) { return("P2")}
+  else if (true_donor %in% leaf_descendants(p3,p1)) { return("P3")}
+  else if (true_donor %in% leaf_descendants(p4,p1)) { return("P4")}
+  else {
+    if (!true_donor %in% Descendants(tree,mrca.phylo(tree, c(p1, p4)), type="all")) {return("O")}
+    else {
+      if (!true_donor %in% Descendants(tree,mrca.phylo(tree, c(p1, p3)), type="all")) {return("N2")}
+      else {return("N1")}
+    }
+  }
+}
 
 D_stat <- function(stat_simulation, quatuor){
   P1 = as.integer(strsplit(quatuor[1], "@")[[1]][1])
@@ -101,8 +92,8 @@ D_stat <- function(stat_simulation, quatuor){
   ng_p3 <- as.integer(strsplit(spnd[mrca.phylo(tree, c(P1, P3))], "@")[[1]][2])
   ng_p4 <- as.integer(strsplit(spnd[mrca.phylo(tree, c(P1, P4))], "@")[[1]][2])
   dist_p13_p14 <- ng_p4 - ng_p3
-  donor = where_is_Daldo(tree, true_donor, P1, P2, P3, P4)
-  recip = where_is_Raldo(tree, true_recip, P1, P2, P3, P4)
+  donor = where_is_Daldo(P1, P2, P3, P4)
+  recip = where_is_Raldo(P1, P2, P3, P4)
   data <- c("P1" = quatuor[1], "P2" = quatuor[2],
   "P3" = quatuor[3], "P4" = quatuor[4],
   "abba" = abba, "baba" = baba, "D" = D,

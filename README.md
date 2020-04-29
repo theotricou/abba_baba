@@ -28,7 +28,7 @@ This can lead to unforeseen bugs!
 for i in `seq 1500 1 1700`; do
   sed "s/aaaa/$i/g" run_slurm.sh > temp
   sbatch temp
-  # rm temp
+  rm temp
 done
 
 rm second
