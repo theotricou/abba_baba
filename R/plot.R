@@ -1,7 +1,6 @@
 #!/usr/bin/env Rscript
 # Theo
 
-library('ape')
 d<-read.table('data.txt',h=T)
 d$Donor = as.character(d$Donor)
 d$Recip = as.character(d$Recip)
@@ -21,6 +20,14 @@ errD=100-posD
 d3<-read.table('data_D3.txt',h=T)
 d3$Donor = as.character(d3$Donor)
 d3$Recip = as.character(d3$Recip)
+plot(d3$D3)
+
+d3[which(d3$D3 == min(d3$D3)),]
+d3[which(d3$D3 == max(d3$D3)),]
+
+df <-d3[order(d3$Donor, d3$Recip, d3$D3),]
+plot(df$D3,pch=19,cex=0.5, col="red")
+
 
 expected_non_nul3<-which(!d3$Recip == "O" &
 !d3$Recip == "N1"&
@@ -34,15 +41,14 @@ ks.test(d3_non_nul[1,]$D3, d3_nul$D3)
 
 
 library("fdrtool")
-ss = seq(1,length(d3$D3))
-W1 <- lm(d3$D3 ~ ss)
+ss = seq(1,length(d3_nul$D3))
+W1 <- lm(d3_nul$D3 ~ ss)
 CR <- (d3$D3-W1$fitted.values)/summary(W1)$sigma
 # mydata$V6 <- (mydata$V3-W1$fitted.values)/summary(W1)$sigma
 normCR <- 1-pnorm(CR)
 adjustnormCR <- p.adjust(normCR, "fdr")
 d3[as.numeric(as.character(names(adjustnormCR[adjustnormCR <= 0.05]))),]
 
-plot(d3$D3)
 
 nrow(d3_non_nul)
 nrow(d3_nul)
