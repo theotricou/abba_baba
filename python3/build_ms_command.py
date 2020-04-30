@@ -131,7 +131,7 @@ if args.verbose:
 #     weigthed_time += len(alive_at_time(t, i)) * [i]
 
 big_branch=0
-for i in t.traverse()
+for i in t.traverse():
     big_branch+=i.dist
 
 pop_donor = pop_recip = False
