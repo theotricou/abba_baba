@@ -141,10 +141,12 @@ while any_descendant_alive(t, pop_recip) == False:
     for i in t.traverse():
         big_branch+=i.dist
         if old < time_mig & time_mig <= big_branch:
-            tea_time=i.get_distance(t) - big_branch + time_mig
+            tea_time=i.get_distance(t) - old + time_mig
+            print(tea_time)
             all_node = alive_at_time(t, int(tea_time))
             if len(all_node) >= 2:
                 pop_donor, pop_recip = np.random.choice(all_node, size = 2, replace = False)
+            break
         else:
             old=big_branch
 
