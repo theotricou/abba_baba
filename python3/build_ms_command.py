@@ -51,7 +51,7 @@ def tree_new_dist(tree, n_generation_to_root):
 def alive_at_time(tree, time):
     results = []
     for i in tree.iter_descendants():
-        if i.up.get_distance(t) < time & time < i.get_distance(t):
+        if i.up.get_distance(t) < time & time <= i.get_distance(t):
             results.append(i)
     return(results)
 
@@ -148,12 +148,12 @@ while any_descendant_alive(t, pop_recip) == False:
         else:
             old=big_branch
 
-# all_node = t.get_descendants()
-pop_donor = pop_recip = False
-while any_descendant_alive(t, pop_recip) == False:
-    # time_mig = int(np.random.uniform(0, n_generation_to_root))
-    time_mig = np.random.choice(weigthed_time)
-    all_node =  alive_at_time(t, time_mig)
+# # all_node = t.get_descendants()
+# pop_donor = pop_recip = False
+# while any_descendant_alive(t, pop_recip) == False:
+#     # time_mig = int(np.random.uniform(0, n_generation_to_root))
+#     time_mig = np.random.choice(weigthed_time)
+#     all_node =  alive_at_time(t, time_mig)
 
 
 # migration Parameters
