@@ -51,7 +51,7 @@ def tree_new_dist(tree, n_generation_to_root):
 def alive_at_time(tree, time):
     results = []
     for i in tree.iter_descendants():
-        if i.up.get_distance(t) < time & time <= i.get_distance(t):
+        if i.up.get_distance(t) < time & time < i.get_distance(t):
             results.append(i)
     return(results)
 
