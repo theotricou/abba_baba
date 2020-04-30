@@ -37,13 +37,13 @@ def read_param(string):
         return(float(value))
 
 
-def tree_new_dist(tree, n_genaration_to_root):
-    multi = n_genaration_to_root / tree.get_farthest_leaf()[1]
+def tree_new_dist(tree, n_generation_to_root):
+    multi = n_generation_to_root / tree.get_farthest_leaf()[1]
     for i in t.traverse():
         if i.is_leaf():
             i.dist = int((i.dist * multi)//1)
             if i.name in sample:
-                i.dist = n_genaration_to_root - i.up.get_distance(t)
+                i.dist = n_generation_to_root - i.up.get_distance(t)
         else :
             i.dist = int((i.dist * multi)//1)
     return(tree)
@@ -76,14 +76,14 @@ if args.parameters == False:
     mu = 1e-7
     len_locus = 1
     ploidy = 1
-    n_genaration_to_root = 1000000
+    n_generation_to_root = 1000000
 else:
     parameters_file = args.parameters
     Ne = read_param("NE")
     mu = read_param("MU")
     len_locus = read_param("LOCI_LENGTH")
     ploidy = read_param("PLOIDY")
-    n_genaration_to_root = read_param("N_GENERATION")
+    n_generation_to_root = read_param("N_GENERATION")
     # os.system('cp %s %s' % (args.parameters, args.output))
     if not read_param("SEED") == 0:
         random.seed(int(read_param("SEED")))
@@ -99,7 +99,7 @@ else:
     te = tr(os.path.join(*args.tree.split('/')[0:-1], "ExtantTree.nwk"), format = 1) # read phylo extant tree
     for i in te: sample.append(i.name)
 
-t = tree_new_dist(t, n_genaration_to_root)
+t = tree_new_dist(t, n_generation_to_root)
 
 # variables for the outputing of the source code for R
 Head = D_R = Pop = Coal = Merge = Migration_starts = Migration_ends = Stat_sum = True_migration = str() # coal_model extended parameters
@@ -111,12 +111,12 @@ for i in t.traverse('postorder'):
             ext_lineages.append(1)
         else:
             ext_lineages.append(0)
-        i.name = str(count) + "@" + str(int(n_genaration_to_root - i.get_distance(t)))
+        i.name = str(count) + "@" + str(int(n_generation_to_root - i.get_distance(t)))
         count += 1
     else:
         pop_d = str(gene_n(i.get_descendants()[0])).split("_")[0]
         pop_r = str(gene_n(i.get_descendants()[1])).split("_")[0]
-        pop_g = int(n_genaration_to_root - i.get_distance(t))
+        pop_g = int(n_generation_to_root - i.get_distance(t))
         i.name = pop_d + "_" + pop_r + "@" + str(pop_g)
         pop_t =  pop_g / (4 * Ne)
         Merge += "feat_pop_merge(%s, %s, %s) + " % (str(pop_t), pop_r, pop_d) + "\n"
@@ -126,25 +126,42 @@ if args.verbose:
     print("\nPicking migration duo. Possible bottleneck!")
 
 
-weigthed_time=[]
-for i in range(n_genaration_to_root):
-    weigthed_time += len(alive_at_time(t, i)) * [i]
+# weigthed_time=[]
+# for i in range(int(n_generation_to_root)):
+#     weigthed_time += len(alive_at_time(t, i)) * [i]
+
+big_branch=0
+for i in t.traverse()
+    big_branch+=i.dist
+
+pop_donor = pop_recip = False
+old=0
+while any_descendant_alive(t, pop_recip) == False:
+    time_mig = int(np.random.uniform(1, big_branch))
+    for i in t.traverse():
+        big_branch+=i.dist
+        if old < time_mig & time_mig <= big_branch:
+            tea_time=i.get_distance(t) - big_branch + time_mig
+            all_node = alive_at_time(t, int(tea_time))
+            if len(all_node) >= 2:
+                pop_donor, pop_recip = np.random.choice(all_node, size = 2, replace = False)
+        else:
+            old=big_branch
 
 # all_node = t.get_descendants()
 pop_donor = pop_recip = False
 while any_descendant_alive(t, pop_recip) == False:
-    # time_mig = int(np.random.uniform(0, n_genaration_to_root))
+    # time_mig = int(np.random.uniform(0, n_generation_to_root))
     time_mig = np.random.choice(weigthed_time)
     all_node =  alive_at_time(t, time_mig)
-    if len(all_node) >= 2:
-        pop_donor, pop_recip = np.random.choice(all_node, size = 2, replace = False)
+
 
 # migration Parameters
 migration_generation = 1 # number of generation during which the population migrate
 migration_fraction = 0.1 # fraction of the donor population that migrate in recipient population, during migration_generation generations
 migration_time = migration_generation / (4 * Ne) # time of the migration in 4Ne
 migration_rate = migration_fraction / migration_time # miogration rate for ms given the fraction and length
-migration_start = (n_genaration_to_root - time_mig) / (4 * Ne) # time at which migrattion star given the donor et the length of the migration
+migration_start = (n_generation_to_root - time_mig) / (4 * Ne) # time at which migrattion star given the donor et the length of the migration
 migration_end = migration_start + migration_time # time at which the migration stop
 # mutation parameter
 mutation_rate = len_locus * 4 * Ne * mu
