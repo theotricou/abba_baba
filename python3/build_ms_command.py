@@ -24,7 +24,10 @@ def gene_t(node):
     return(str(node.name).split('@')[1])
 
 def gene_n(node):
-    return(str(node.name).split('@')[0])
+    if "_" in node.name:
+        str(node.name).split('@')[0].split('_')[1]
+    else:
+        return(str(node.name).split('@')[0])
 
 def read_param(string):
         with open(parameters_file) as f:
@@ -36,14 +39,11 @@ def read_param(string):
                     break
         return(float(value))
 
-
 def tree_new_dist(tree, n_generation_to_root):
     multi = n_generation_to_root / tree.get_farthest_leaf()[1]
     for i in t.traverse():
         if i.is_leaf():
-            i.dist = int((i.dist * multi)//1)
-            if i.name in sample:
-                i.dist = n_generation_to_root - i.up.get_distance(t)
+            i.dist = n_generation_to_root - i.up.get_distance(t)
         else :
             i.dist = int((i.dist * multi)//1)
     return(tree)
@@ -60,15 +60,12 @@ def any_descendant_alive(tree, node):
     if node == False:
         return(False)
     else:
-        if "@0" in node.name:
-            return(True)
-        else:
-            for i in node.get_leaves():
-                if "@0" in i.name:
-                    return(True)
-                    break
-                else:
-                    return(False)
+        for i in node:
+            if "E_" in i.name:
+                return(True)
+                break
+            else:
+                return(False)
 
 # general ms parameters,if the parameters file existe the following default parameters are overruled
 if args.parameters == False:
@@ -109,9 +106,10 @@ for i in t.traverse('postorder'):
     if i.is_leaf():
         if i.name in sample:
             ext_lineages.append(1)
+            i.name = "E_" + str(count) + "@0"
         else:
             ext_lineages.append(0)
-        i.name = str(count) + "@" + str(int(n_generation_to_root - i.get_distance(t)))
+            i.name = "X_" + str(count) + "@0"
         count += 1
     else:
         pop_d = str(gene_n(i.get_descendants()[0])).split("_")[0]
@@ -125,11 +123,6 @@ for i in t.traverse('postorder'):
 if args.verbose:
     print("\nPicking migration duo. Possible bottleneck!")
 
-
-# weigthed_time=[]
-# for i in range(int(n_generation_to_root)):
-#     weigthed_time += len(alive_at_time(t, i)) * [i]
-
 big_branch=0
 for i in t.traverse():
     big_branch+=i.dist
@@ -139,24 +132,15 @@ old=0
 while any_descendant_alive(t, pop_recip) == False:
     time_mig = int(np.random.uniform(1, big_branch))
     for i in t.traverse():
-        big_branch+=i.dist
+        big_branch += i.dist
         if old < time_mig & time_mig <= big_branch:
-            tea_time=i.get_distance(t) - old + time_mig
-            print(tea_time)
+            tea_time = i.get_distance(t) - old + time_mig
             all_node = alive_at_time(t, int(tea_time))
             if len(all_node) >= 2:
                 pop_donor, pop_recip = np.random.choice(all_node, size = 2, replace = False)
             break
         else:
             old=big_branch
-
-# # all_node = t.get_descendants()
-# pop_donor = pop_recip = False
-# while any_descendant_alive(t, pop_recip) == False:
-#     # time_mig = int(np.random.uniform(0, n_generation_to_root))
-#     time_mig = np.random.choice(weigthed_time)
-#     all_node =  alive_at_time(t, time_mig)
-
 
 # migration Parameters
 migration_generation = 1 # number of generation during which the population migrate
@@ -165,7 +149,6 @@ migration_time = migration_generation / (4 * Ne) # time of the migration in 4Ne
 migration_rate = migration_fraction / migration_time # miogration rate for ms given the fraction and length
 migration_start = (n_generation_to_root - time_mig) / (4 * Ne) # time at which migrattion star given the donor et the length of the migration
 migration_end = migration_start + migration_time # time at which the migration stop
-# mutation parameter
 mutation_rate = len_locus * 4 * Ne * mu
 
 # R source code variables
@@ -173,13 +156,14 @@ Head = "library('ape') \n" + "library('coala') \n" + "library('phyclust') \n" + 
 Pop = "pop <- c(%s) \n\n" % ', '.join(str(x) for x in ext_lineages)
 D_R = "name_donor <- '%s' \nname_recip <- '%s' \n\n" % (pop_donor.name, pop_recip.name)
 Coal = "model <- coal_model(sample_size = c(%s), loci_number = %s, loci_length = 1, ploidy = %s) + \n" % (', '.join(str(x) for x in ext_lineages), len_locus, ploidy)
-Mutation = "feat_mutation(rate = %s, model = 'IFS', fixed_number = FALSE, locus_group = 'all') + \n" % mutation_rate
+# Mutation = "feat_mutation(rate = %s, model = 'IFS', fixed_number = FALSE, locus_group = 'all') + \n" % mutation_rate
+Mutation = "feat_mutation(1, fixed_number = TRUE, locus_group = 'all') + \n"
 Migration_starts = "feat_migration(%s, pop_from = %s, pop_to = %s, symmetric = FALSE, time = %s, locus_group = 'all') + \n" % (
     migration_rate, str(gene_n(pop_donor)).split("_")[0], str(gene_n(pop_recip)).split("_")[0], migration_start)
 Migration_ends = "feat_migration(0, pop_from = %s, pop_to = %s, symmetric = FALSE, time = %s, locus_group = 'all') + \n" % (
     str(gene_n(pop_donor)).split("_")[0], str(gene_n(pop_recip)).split("_")[0], migration_end)
 Stat_sum = "sumstat_seg_sites() + sumstat_trees() \n"
-True_migration = "\n# donor: " + pop_donor.name + " -- > recipient: " + pop_recip.name + "\n"
+True_migration = "\n# donor: " + pop_donor.name + " -- > recipient: " + pop_recip.name + ' at ' + tea_time + "\n"
 
 t.write(outfile = os.path.join(args.output,'spe_tree'), format=1, format_root_node=True)
 

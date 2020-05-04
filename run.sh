@@ -7,6 +7,7 @@ dir=$2
 seed=$3
 zomp=$4
 simp=$5
+sampling=$6
 
 if [ ! -d "$dir" ]; then
   mkdir $dir
@@ -16,7 +17,9 @@ if [ ! -d "$dir" ]; then
 
   singularity run $singularity python /simulation/ZOMBI/Zombi.py T $dir/zombi_parameters $dir
 
-  #singularity run $singularity python /simulation/ZOMBI/SpeciesSampler.py n 20 $dir
+  if [ $sampling == y ]; then
+    singularity run $singularity python /simulation/ZOMBI/SpeciesSampler.py n 20 $dir
+  fi
 
   singularity run $singularity python ${path%run.sh}python3/build_ms_command.py $dir/T/CompleteTree.nwk -p $dir/sim_parameters -o $dir -v
 
