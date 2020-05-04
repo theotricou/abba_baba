@@ -88,13 +88,17 @@ else:
 
 t = tr(args.tree, format = 1) # read phylo tree
 
+extant = []
 sample = []
 if os.path.isfile(os.path.join(*args.tree.split('/')[0:-2], "SAMPLE_1/SampledSpeciesTree.nwk")):
     ts = tr(os.path.join(*args.tree.split('/')[0:-2], "SAMPLE_1/SampledSpeciesTree.nwk"), format = 1) # read phylo extant tree
+    te = tr(os.path.join(*args.tree.split('/')[0:-1], "ExtantTree.nwk"), format = 1) # read phylo extant tree
+    for i in te: extant.append(i.name)
     for i in ts: sample.append(i.name)
 else:
     te = tr(os.path.join(*args.tree.split('/')[0:-1], "ExtantTree.nwk"), format = 1) # read phylo extant tree
     for i in te: sample.append(i.name)
+    for i in te: extant.append(i.name)
 
 t = tree_new_dist(t, n_generation_to_root)
 
@@ -106,10 +110,13 @@ for i in t.traverse('postorder'):
     if i.is_leaf():
         if i.name in sample:
             ext_lineages.append(1)
-            i.name = "E_" + str(count) + "@0"
+            i.name = "l_" + str(count) + "@0"
+        elif i.name in extant:
+            ext_lineages.append(0)
+            i.name = "s_" + str(count) + "@0"
         else:
             ext_lineages.append(0)
-            i.name = "X_" + str(count) + "@0"
+            i.name = "e_" + str(count) + int(n_generation_to_root - i.get_distance(t))
         count += 1
     else:
         pop_d = str(gene_n(i.get_descendants()[0])).split("_")[0]
@@ -163,7 +170,7 @@ Migration_starts = "feat_migration(%s, pop_from = %s, pop_to = %s, symmetric = F
 Migration_ends = "feat_migration(0, pop_from = %s, pop_to = %s, symmetric = FALSE, time = %s, locus_group = 'all') + \n" % (
     str(gene_n(pop_donor)).split("_")[0], str(gene_n(pop_recip)).split("_")[0], migration_end)
 Stat_sum = "sumstat_seg_sites() + sumstat_trees() \n"
-True_migration = "\n# donor: " + pop_donor.name + " -- > recipient: " + pop_recip.name + ' at ' + tea_time + "\n"
+True_migration = "\n# donor: " + pop_donor.name + " -- > recipient: " + pop_recip.name + ' at ' + str(tea_time) + "\n"
 
 t.write(outfile = os.path.join(args.output,'spe_tree'), format=1, format_root_node=True)
 
