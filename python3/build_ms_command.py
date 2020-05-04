@@ -1,182 +1,236 @@
-#! /usr/bin/env python
-# Theo
+#!/usr/bin/env Rscript
+# Théo
 
-# build ms command file from a phylogeny tree
+cat("Starting ms simulation \n")
+args = commandArgs(trailingOnly=TRUE)
 
-import os
-import sys
-from ete3 import Tree as tr
-import random
-import argparse
-import numpy as np
+cat("step 1 : initializing \n")
 
-print("\nBuilding ms command")
+output=args[1]
+source(paste(output,"ms_command.R", sep ="/"))
+source(paste(output,"sim_parameters", sep ="/"))
 
-parser = argparse.ArgumentParser(description='Optional app description')
 
-parser.add_argument('tree', type = str, help = 'A phylogenetic tree')
-parser.add_argument('-o', '--output', type = str, nargs = "?", default = "Simulation", help = "Name of the simulation folder. Default is 'Simulation'.")
-parser.add_argument('-p', '--parameters', type = str, nargs = "?", default = False, help ='An optionnal parameters file argument')
-parser.add_argument("-v", "--verbose", action = "store_true", help = "Increase output verbosity")
-args = parser.parse_args()
+is_abba <- function(seg_site){if(sum(seg_site) == 2 & seg_site[1] == seg_site[4]){return(1)} else {return(0)}}
+is_baba <- function(seg_site){if(sum(seg_site) == 2 & seg_site[1] == seg_site[3]){return(1)} else {return(0)}}
 
-def gene_t(node):
-    return(str(node.name).split('@')[1])
+validateandreorderD<-function(arr, dist) {
+  # created by Damien
+  submat<-dist[arr,arr]
+  if (sum(submat==max(submat))==6) {
+    diag(submat)<-1
+    return(names(sort(apply(submat,1,prod))))
+}}
 
-def gene_n(node):
-    if "_" in node.name:
-        str(node.name).split('@')[0].split('_')[1]
-    else:
-        return(str(node.name).split('@')[0])
+getquatuors<-function(tr) {
+  # created by Damien
+  dist<-cophenetic(tr)
+  allquat<-combn(tr$tip.label,4)
+  RES<-do.call(rbind,apply(allquat, 2, function(x) validateandreorderD(x, dist)))
+  return(RES)
+}
 
-def read_param(string):
-        with open(parameters_file) as f:
-            for line in f:
-                if line[0] == "#" or line == "\n":
-                    continue
-                if string + "=" in line:
-                    parameter, value = line.strip().split("=")
-                    break
-        return(float(value))
+leaf_descendants <- function(p, p_ext) {
+  all_anc_leaf <- c(p, Ancestors(tree, p, type = "all"))
+  first_son_leaf <- all_anc_leaf[match(mrca.phylo(tree, c(p, p_ext)), all_anc_leaf) - 1]
+  des_leaf <- c(first_son_leaf,Descendants(tree, as.integer(first_son_leaf), type = "all"))
+  return(des_leaf)
+}
 
-def tree_new_dist(tree, n_generation_to_root):
-    multi = n_generation_to_root / tree.get_farthest_leaf()[1]
-    for i in t.traverse():
-        if i.is_leaf():
-            i.dist = n_generation_to_root - i.up.get_distance(t)
-        else :
-            i.dist = int((i.dist * multi)//1)
-    return(tree)
+leaf_ancestors<-function(p, p_ext){
+  all_anc <- c(p, Ancestors(tree, p, type = "all"))
+  anc_only <- all_anc[1:match(mrca.phylo(tree, c(p, p_ext)), all_anc) - 1]
+  return(anc_only)
+}
 
-def alive_at_time(tree, time):
-    results = []
-    for i in tree.iter_descendants():
-        if i.up.get_distance(t) < time & time <= i.get_distance(t):
-            results.append(i)
-    return(results)
+where_is_Raldo<-function(p1,p2,p3,p4){
+  if (true_recip %in% leaf_ancestors(p1,p2)) { return("P1")}
+  else if (true_recip %in% leaf_ancestors(p2,p1)) { return("P2")}
+  else if (true_recip %in% leaf_ancestors(p3,p1)) { return("P3")}
+  else if (true_recip %in% leaf_ancestors(p4,p1)) { return("P4")}
+  else {
+    if (!true_recip %in% Descendants(tree,mrca.phylo(tree, c(p1, p4)), type="all")) {return("O")}
+    else {
+      if (true_recip %in% leaf_ancestors(p1,p3)) {return("N1")}
+      else {
+        if (true_recip %in% leaf_ancestors(p1,p4)) {return("N2")}
+        else {return("O")}
+}}}}
 
-def any_descendant_alive(tree, node):
-    # test if the recipient of a gene flow has any descendant, if not no gene flow can be detecte
-    if node == False:
-        return(False)
-    else:
-        for i in node:
-            if "E_" in i.name:
-                return(True)
-                break
-            else:
-                return(False)
+where_is_Daldo<-function(p1,p2,p3,p4){
+  if (true_donor %in% leaf_descendants(p1,p2)) { return("P1")}
+  else if (true_donor %in% leaf_descendants(p2,p1)) { return("P2")}
+  else if (true_donor %in% leaf_descendants(p3,p1)) { return("P3")}
+  else if (true_donor %in% leaf_descendants(p4,p1)) { return("P4")}
+  else {
+    if (!true_donor %in% Descendants(tree,mrca.phylo(tree, c(p1, p4)), type="all")) {return("O")}
+    else {
+      if (!true_donor %in% Descendants(tree,mrca.phylo(tree, c(p1, p3)), type="all")) {return("N2")}
+      else {return("N1")}
+}}}
 
-# general ms parameters,if the parameters file existe the following default parameters are overruled
-if args.parameters == False:
-    Ne = 100000
-    mu = 1e-7
-    len_locus = 1
-    ploidy = 1
-    n_generation_to_root = 1000000
-else:
-    parameters_file = args.parameters
-    Ne = read_param("NE")
-    mu = read_param("MU")
-    len_locus = read_param("LOCI_LENGTH")
-    ploidy = read_param("PLOIDY")
-    n_generation_to_root = read_param("N_GENERATION")
-    # os.system('cp %s %s' % (args.parameters, args.output))
-    if not read_param("SEED") == 0:
-        random.seed(int(read_param("SEED")))
-        np.random.seed(int(read_param("SEED")))
+D_stat <- function(stat_simulation, q){
+  p1 = which(da$nu == q[1])
+  p2 = which(da$nu == q[2])
+  p3 = which(da$nu == q[3])
+  p4 = which(da$nu == q[4])
+  abba <- sum(apply(stat_simulation[c(p1, p2, p3, p4),], 2, function(x) is_abba(x)))
+  baba <- sum(apply(stat_simulation[c(p1, p2, p3, p4),], 2, function(x) is_baba(x)))
+  if ((abba + baba) != 0) {D = (abba - baba) / (abba + baba)} else {D = 0}
+  ng_p3 <- as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[3]))], "@")[[1]][2])
+  ng_p4 <- as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[4]))], "@")[[1]][2])
+  dist_p13_p14 <- ng_p4 - ng_p3
+  donor = where_is_Daldo(q[1], q[2], q[3], q[4])
+  recip = where_is_Raldo(q[1], q[2], q[3], q[4])
+  data <- c("P1" = q[1], "P2" = q[2],
+  "P3" = q[3], "P4" = q[4],
+  "abba" = abba, "baba" = baba, "D" = D,
+  "Pvalue" = binom.test(c(abba, baba), p = 0.5)$p.value,
+  "d_N2" = dist_p13_p14,
+  "Donor" = donor, "Recip" = recip)
+  return(data)
+}
 
-t = tr(args.tree, format = 1) # read phylo tree
+validateandreorderD3<-function(arr, dist) {
+  # created by Damien
+  submat<-dist[arr,arr]
+  return(names(sort(apply(submat,1,sum))))
+}
 
-extant = []
-sample = []
-if os.path.isfile(os.path.join(*args.tree.split('/')[0:-2], "SAMPLE_1/SampledSpeciesTree.nwk")):
-    ts = tr(os.path.join(*args.tree.split('/')[0:-2], "SAMPLE_1/SampledSpeciesTree.nwk"), format = 1) # read phylo extant tree
-    te = tr(os.path.join(*args.tree.split('/')[0:-1], "ExtantTree.nwk"), format = 1) # read phylo extant tree
-    for i in te: extant.append(i.name)
-    for i in ts: sample.append(i.name)
-else:
-    te = tr(os.path.join(*args.tree.split('/')[0:-1], "ExtantTree.nwk"), format = 1) # read phylo extant tree
-    for i in te: sample.append(i.name)
-    for i in te: extant.append(i.name)
+gettrios<-function(tr) {
+  # created by Damien
+  dist<-cophenetic(tr)
+  alltrios<-combn(tr$tip.label,3)
+  RES<-t(apply(alltrios, 2, function(x) validateandreorderD3(x, dist)))
+  return(RES)
+}
 
-t = tree_new_dist(t, n_generation_to_root)
+devil_mambojambo<-function(range){
+  return(Reduce('+', lapply(single_trees[as.integer(fromto[range,1]):as.integer(fromto[range,2])], function(x) cophenetic(x)[ord,ord])))
+}
 
-# variables for the outputing of the source code for R
-Head = D_R = Pop = Coal = Merge = Migration_starts = Migration_ends = Stat_sum = True_migration = str() # coal_model extended parameters
-ext_lineages = []
-count = 1
-for i in t.traverse('postorder'):
-    if i.is_leaf():
-        if i.name in sample:
-            ext_lineages.append(1)
-            i.name = "l_" + str(count) + "@0"
-        elif i.name in extant:
-            ext_lineages.append(0)
-            i.name = "s_" + str(count) + "@0"
-        else:
-            ext_lineages.append(0)
-            i.name = "e_" + str(count) + int(n_generation_to_root - i.get_distance(t))
-        count += 1
-    else:
-        pop_d = str(gene_n(i.get_descendants()[0])).split("_")[0]
-        pop_r = str(gene_n(i.get_descendants()[1])).split("_")[0]
-        pop_g = int(n_generation_to_root - i.get_distance(t))
-        i.name = pop_d + "_" + pop_r + "@" + str(pop_g)
-        pop_t =  pop_g / (4 * Ne)
-        Merge += "feat_pop_merge(%s, %s, %s) + " % (str(pop_t), pop_r, pop_d) + "\n"
+leaf_descendants <- function(leaf, comp_leaf) {
+  all_anc_leaf <- c(leaf, Ancestors(tree, leaf, type = "all"))
+  first_son_leaf <- all_anc_leaf[match(mrca.phylo(tree, c(leaf, comp_leaf)), all_anc_leaf) - 1]
+  des_leaf <- c(first_son_leaf,Descendants(tree, as.integer(first_son_leaf), type = "all"))
+  return(des_leaf)
+}
 
-# randomly choose a donor lineage and a recipient (this recipient need to have a least one extant descendant)
-if args.verbose:
-    print("\nPicking migration duo. Possible bottleneck!")
+leaf_ancestors<-function(p, p_ext){
+  all_anc <- c(p, Ancestors(tree, p, type = "all"))
+  anc_only <- all_anc[1:match(mrca.phylo(tree, c(p, p_ext)), all_anc) - 1]
+  return(anc_only)
+}
 
-big_branch=0
-for i in t.traverse():
-    big_branch+=i.dist
+position_D_in_tree<-function(p1,p2,p3){
+  if (true_donor %in% leaf_descendants(p3,p2)){return("P3")}
+  else if (true_donor %in% leaf_descendants(p2,p1)){return("P2")}
+  else if (true_donor %in% leaf_descendants(p1,p2)){return("P1")}
+  else if (true_donor %in% Descendants(tree,mrca.phylo(tree, c(p1, p3)), type="all")){return("N1")}
+  else{return("O")}
+}
 
-pop_donor = pop_recip = False
-old=0
-while any_descendant_alive(t, pop_recip) == False:
-    time_mig = int(np.random.uniform(1, big_branch))
-    for i in t.traverse():
-        big_branch += i.dist
-        if old < time_mig & time_mig <= big_branch:
-            tea_time = i.get_distance(t) - old + time_mig
-            all_node = alive_at_time(t, int(tea_time))
-            if len(all_node) >= 2:
-                pop_donor, pop_recip = np.random.choice(all_node, size = 2, replace = False)
-            break
-        else:
-            old=big_branch
+position_R_in_tree<-function(p1,p2,p3){
+  if (true_recip %in% leaf_ancestors(p3,p2)){return("P3")}
+  else if (true_recip %in% leaf_ancestors(p2,p1)){return("P2")}
+  else if (true_recip %in% leaf_ancestors(p1,p2)){return("P1")}
+  else if (true_recip %in% Descendants(tree,mrca.phylo(tree, c(p1, p3)), type="all")){return("N1")}
+  else{return("O")}
+}
 
-# migration Parameters
-migration_generation = 1 # number of generation during which the population migrate
-migration_fraction = 0.1 # fraction of the donor population that migrate in recipient population, during migration_generation generations
-migration_time = migration_generation / (4 * Ne) # time of the migration in 4Ne
-migration_rate = migration_fraction / migration_time # miogration rate for ms given the fraction and length
-migration_start = (n_generation_to_root - time_mig) / (4 * Ne) # time at which migrattion star given the donor et the length of the migration
-migration_end = migration_start + migration_time # time at which the migration stop
-mutation_rate = len_locus * 4 * Ne * mu
+D3_v2<-function(matrice, t){
+  P1<-da[da$nu == t[1],3]
+  P2<-da[da$nu == t[2],3]
+  P3<-da[da$nu == t[3],3]
+  D3<-(matrice[P2,P3]-matrice[P1,P3])/(matrice[P2,P3]+matrice[P1,P3])
+  D3_donor<-position_D_in_tree(t[1],t[2],t[3])
+  D3_recip<-position_R_in_tree(t[1],t[2],t[3])
+  data <- c(
+    "D3" = as.numeric(D3),
+    "Donor" = D3_donor,
+    "Recip" = D3_recip)
+  return(data)
+}
 
-# R source code variables
-Head = "library('ape') \n" + "library('coala') \n" + "library('phyclust') \n" + "library('phangorn') \n" + "activate_ms(priority = 600) \n\n"
-Pop = "pop <- c(%s) \n\n" % ', '.join(str(x) for x in ext_lineages)
-D_R = "name_donor <- '%s' \nname_recip <- '%s' \n\n" % (pop_donor.name, pop_recip.name)
-Coal = "model <- coal_model(sample_size = c(%s), loci_number = %s, loci_length = 1, ploidy = %s) + \n" % (', '.join(str(x) for x in ext_lineages), len_locus, ploidy)
-# Mutation = "feat_mutation(rate = %s, model = 'IFS', fixed_number = FALSE, locus_group = 'all') + \n" % mutation_rate
-Mutation = "feat_mutation(1, fixed_number = TRUE, locus_group = 'all') + \n"
-Migration_starts = "feat_migration(%s, pop_from = %s, pop_to = %s, symmetric = FALSE, time = %s, locus_group = 'all') + \n" % (
-    migration_rate, str(gene_n(pop_donor)).split("_")[0], str(gene_n(pop_recip)).split("_")[0], migration_start)
-Migration_ends = "feat_migration(0, pop_from = %s, pop_to = %s, symmetric = FALSE, time = %s, locus_group = 'all') + \n" % (
-    str(gene_n(pop_donor)).split("_")[0], str(gene_n(pop_recip)).split("_")[0], migration_end)
-Stat_sum = "sumstat_seg_sites() + sumstat_trees() \n"
-True_migration = "\n# donor: " + pop_donor.name + " -- > recipient: " + pop_recip.name + ' at ' + str(tea_time) + "\n"
+################################################################################
 
-t.write(outfile = os.path.join(args.output,'spe_tree'), format=1, format_root_node=True)
+### D stat
 
-# R source command output
-with open(os.path.join(args.output,'ms_command.R'), "w") as output:
-    output.write("".join([Head, Pop, D_R, Coal, Mutation, Merge, Migration_starts, Migration_ends, Stat_sum, True_migration]))
+tree <- read.tree(file.path(output, "spe_tree"))
+extant<-grep("l>",tree$tip.label)
+tr<-keep.tip(tree, tree$tip.label[extant])
+da<-data.frame(na=tree$tip.label[extant], nu=extant, ge=paste("s",1:length(extant),sep=""))
 
-if args.verbose:
-    print(True_migration)
+cat("step 2 : running simulation \n")
+
+if (SEED == 0) {rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE)
+} else {
+  library(parallel)
+  RNGkind("L'Ecuyer-CMRG")
+  set.seed(SEED)
+  M <- N_CORE
+  s <- .Random.seed
+  for (i in 1:M){s <- nextRNGStream(s)}
+  rep <- mclapply(X = 1:N_SIMULATION,
+               FUN = function(x) simulate(model),
+               mc.cores = M,
+               mc.set.seed = TRUE
+  )
+}
+
+cat("step 2 : uniq \n")
+
+uniq <- lapply(rep, function(x){
+  if (ncol(x$seg_sites[[1]]) == 1) {
+      return(x$seg_sites[[1]][[1]])}})
+
+single_trees<-unlist(lapply(which(uniq != "NULL"), function(x) rep[[x]]$trees[[1]]))
+
+# cat("Outputting trees from single segregating site locus in: ")
+# outfile_s <- paste(output, "trees", sep = "/")
+# write(single_trees, file=outfile_s)
+# cmd <- paste("zip ",outfile_s,".zip ",outfile_s, sep="")
+# system(cmd, wait=T)
+# cmd <- paste("rm ",outfile_s, sep="")
+# system(cmd, wait=T)
+
+cat("step 2 : selecting sites \n")
+
+sites <- do.call("cbind", uniq)
+sites <- sites[, colSums(sites != 0) > 1]
+topologiesD <- getquatuors(tr)
+topologiesD <- apply(topologiesD,c(1,2), function(x) da[as.character(da$na) == as.character(x),2])
+spnd<-c(tree$tip.label, tree$node.label)
+true_donor = which(spnd == name_donor) # from variable in sourced file
+true_recip = which(spnd == name_recip) # from variable in sourced file
+
+cat("step 3 : computing D stat \n")
+
+results <- as.data.frame(t(apply(topologiesD, 1, function(x) D_stat(sites, x)))) # bottleneck
+
+cat("step 4 : output D\n")
+
+outfile_d <- paste(output, "data.txt", sep = "/")
+write.table(results, outfile_d, sep = "\t", row.names = F, append = F, quote=F)
+
+### D3
+
+topologiesD3 <- gettrios(tr)
+topologiesD3 <- apply(topologiesD3,c(1,2), function(x) da[as.character(da$na) == as.character(x),2])
+single_trees <- lapply(single_trees, function(x) read.tree(text=x))
+ord<-sort(row.names(cophenetic(single_trees[[1]])))
+blocks<-seq(1,length(single_trees), by=50000)
+fromto<-cbind(blocks,c(blocks[-1]-1, length(single_trees)))
+list_submat<-lapply(1:length(blocks),function(x) devil_mambojambo(x))
+sum_mat<-Reduce('+',list_submat)
+
+cat("step 5 : computing D3\n")
+
+results<-cbind(topologiesD3,as.data.frame(t(apply(topologiesD3, 1, function(x) D3_v2(sum_mat, x)))))
+
+cat("step 6 : output D3\n")
+
+outfile <- paste(output, "data_D3.txt", sep = "/")
+write.table(results, outfile, sep = "\t", row.names = F, append = F, quote=F)
+
+cat("End \n")
