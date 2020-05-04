@@ -25,7 +25,6 @@ if [ ! -d "$dir" ]; then
 
   singularity run $singularity Rscript ${path%run.sh}R/ms_simulation.R $dir
 
-  singularity run $singularity Rscript ${path%run.sh}R/D3.R $dir
 else
 
   echo

@@ -178,8 +178,6 @@ if (SEED == 0) {rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE)
   )
 }
 
-cat("step 2 : uniq \n")
-
 uniq <- lapply(rep, function(x){
   if (ncol(x$seg_sites[[1]]) == 1) {
       return(x$seg_sites[[1]][[1]])}})
