@@ -192,8 +192,6 @@ single_trees<-unlist(lapply(which(uniq != "NULL"), function(x) rep[[x]]$trees[[1
 # cmd <- paste("rm ",outfile_s, sep="")
 # system(cmd, wait=T)
 
-cat("step 2 : selecting sites \n")
-
 sites <- do.call("cbind", uniq)
 sites <- sites[, colSums(sites != 0) > 1]
 topologiesD <- getquatuors(tr)

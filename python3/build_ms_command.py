@@ -17,6 +17,7 @@ parser = argparse.ArgumentParser(description='Optional app description')
 parser.add_argument('tree', type = str, help = 'A phylogenetic tree')
 parser.add_argument('-o', '--output', type = str, nargs = "?", default = "Simulation", help = "Name of the simulation folder. Default is 'Simulation'.")
 parser.add_argument('-p', '--parameters', type = str, nargs = "?", default = False, help ='An optionnal parameters file argument')
+parser.add_argument('-s', '--sample', type = int, nargs = "?", default = False, help ='An optionnal parameters for sampling')
 parser.add_argument("-v", "--verbose", action = "store_true", help = "Increase output verbosity")
 args = parser.parse_args()
 
@@ -57,15 +58,9 @@ def alive_at_time(tree, time):
 
 def any_descendant_alive(tree, node):
     # test if the recipient of a gene flow has any descendant, if not no gene flow can be detecte
-    if node == False:
-        return(False)
-    else:
-        for i in node:
-            if "l" in i.name:
-                return(True)
-                break
-            else:
-                return(False)
+    for i in node:
+        if "l" in i.name:
+            return(True)
 
 # general ms parameters,if the parameters file existe the following default parameters are overruled
 if args.parameters == False:
@@ -91,12 +86,11 @@ t = tr(args.tree, format = 1) # read phylo tree
 extant = []
 te = tr(os.path.join(*args.tree.split('/')[0:-1], "ExtantTree.nwk"), format = 1) # read phylo extant tree
 for i in te: extant.append(i.name)
-sample = []
-if os.path.isfile(os.path.join(*args.tree.split('/')[0:-2], "SAMPLE_1/SampledSpeciesTree.nwk")):
-    ts = tr(os.path.join(*args.tree.split('/')[0:-2], "SAMPLE_1/SampledSpeciesTree.nwk"), format = 1) # read phylo extant tree
-    for i in ts: sample.append(i.name)
-else:
+
+if args.sample == False:
     sample = extant
+else:
+    sample = random.sample(extant,args.sample)
 
 t = tree_new_dist(t, n_generation_to_root)
 
@@ -130,24 +124,30 @@ t.write(outfile = os.path.join(args.output,'spe_tree'), format=1, format_root_no
 if args.verbose:
     print("\nPicking migration duo. Possible bottleneck!")
 
-big_branch=0
+sumbranch=0
 for i in t.traverse():
-    big_branch+=i.dist
+    sumbranch+=i.dist
 
 pop_donor = pop_recip = False
-old=0
-while any_descendant_alive(t, pop_recip) == False:
-    time_mig = int(np.random.uniform(1, big_branch))
+big_branch=old=0
+while pop_recip == False:
+    time_mig = int(np.random.uniform(1, sumbranch))
     for i in t.traverse():
-        big_branch += i.dist
-        if old < time_mig & time_mig <= big_branch:
-            tea_time = i.get_distance(t) - old + time_mig
-            all_node = alive_at_time(t, int(tea_time))
-            if len(all_node) >= 2:
-                pop_donor, pop_recip = np.random.choice(all_node, size = 2, replace = False)
+        if big_branch < time_mig & time_mig <= big_branch + i.dist:
+            tea_time = i.get_distance(t) + big_branch - time_mig
+            pop_donor = i
             break
-        else:
-            old=big_branch
+        big_branch+=i.dist
+    all_node = alive_at_time(t, int(tea_time))
+    all_node=random.sample(all_node,len(all_node))
+    for j in all_node:
+        if  j.name != pop_donor.name:
+            if any_descendant_alive(t, j) == True:
+                pop_recip = j
+                break
+            else:
+                pop_recip = False
+
 
 # migration Parameters
 migration_generation = 1 # number of generation during which the population migrate
