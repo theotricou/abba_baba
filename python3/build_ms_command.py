@@ -154,7 +154,7 @@ migration_generation = 1 # number of generation during which the population migr
 migration_fraction = 0.1 # fraction of the donor population that migrate in recipient population, during migration_generation generations
 migration_time = migration_generation / (4 * Ne) # time of the migration in 4Ne
 migration_rate = migration_fraction / migration_time # miogration rate for ms given the fraction and length
-migration_start = (n_generation_to_root - time_mig) / (4 * Ne) # time at which migrattion star given the donor et the length of the migration
+migration_start = (n_generation_to_root - tea_time) / (4 * Ne) # time at which migrattion star given the donor et the length of the migration
 migration_end = migration_start + migration_time # time at which the migration stop
 mutation_rate = len_locus * 4 * Ne * mu
 
@@ -170,7 +170,7 @@ Migration_starts = "feat_migration(%s, pop_from = %s, pop_to = %s, symmetric = F
 Migration_ends = "feat_migration(0, pop_from = %s, pop_to = %s, symmetric = FALSE, time = %s, locus_group = 'all') + \n" % (
     str(gene_n(pop_donor)).split("_")[0], str(gene_n(pop_recip)).split("_")[0], migration_end)
 Stat_sum = "sumstat_seg_sites() + sumstat_trees() \n"
-True_migration = "\n# donor: " + pop_donor.name + " -- > recipient: " + pop_recip.name + ' at ' + str(tea_time) + "\n"
+True_migration = "\n# donor: " + pop_donor.name + " -- > recipient: " + pop_recip.name + ' at ' + str(n_generation_to_root - tea_time) + "\n"
 
 t.write(outfile = os.path.join(args.output,'spe_tree'), format=1, format_root_node=True)
 

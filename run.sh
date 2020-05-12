@@ -12,18 +12,16 @@ sampling=$6
 if [ ! -d "$dir" ]; then
   mkdir $dir
 
-  sed "s/1123581321/$seed/g" $zomp > $dir/zombi_parameters
+  #sed "s/1123581321/$seed/g" $zomp > $dir/zombi_parameters
+  cp $zomp $dir/zombi_parameters
+
   sed "s/1123581321/$seed/g" $simp > $dir/sim_parameters
 
   singularity run $singularity python /simulation/ZOMBI/Zombi.py T $dir/zombi_parameters $dir
 
-  if [ $sampling == y ]; then
-    singularity run $singularity python /simulation/ZOMBI/SpeciesSampler.py n 20 $dir
-  fi
+  singularity run $singularity python ${path%run_same_tree.sh}python3/build_ms_command.py $dir/T/CompleteTree.nwk -p $dir/sim_parameters -s $sampling -o $dir -v
 
-  singularity run $singularity python ${path%run.sh}python3/build_ms_command.py $dir/T/CompleteTree.nwk -p $dir/sim_parameters -o $dir -v
-
-  singularity run $singularity Rscript ${path%run.sh}R/ms_simulation.R $dir
+  singularity run $singularity Rscript ${path%run_same_tree.sh}R/ms_simulation.R $dir
 
 else
 

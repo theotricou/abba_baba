@@ -3,10 +3,10 @@
 
 #shell
 
-for i in `seq 25 1 2`; do
+for i in `seq 2678 1 2678`; do
   sed "s/aaaa/$i/g" run_slurm.sh > temp
-  sbatch temp
-  rm temp
+  # sbatch temp
+  # rm temp
 done
 
 rm -rf D*
@@ -86,6 +86,14 @@ temp$obs<-as.numeric(as.character(temp$obs))
 temp$exp<-as.numeric(as.character(temp$exp))
 temp = (melt(temp, id=("ex")))
 
+
+temp<-resD[,c(5,6)]
+colnames(temp)<-c('obs','exp')
+temp$obs<-as.numeric(as.character(temp$obs))
+temp$exp<-as.numeric(as.character(temp$exp))
+temp = (melt(temp, id=("ex")))
+
+
 pdf(file = "Dstat_error.pdf", width = 8, height = 8)
 boxplot(temp$value~temp$variable+temp$ex,las = 1,
   main="D stat error (expected vs observed) by extinction rate",
@@ -148,7 +156,7 @@ truc<-function(t) {
 par(mfrow=c(2,2))
 
 
-block=125000
+block=100000
 pdf(file = "Dstat_dist_err.pdf", width = 8, height = 8)
 par(mfrow=c(2,2))
 dataDist<-read.table('sim_0/Dstat',h=F)
