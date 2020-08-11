@@ -62,6 +62,29 @@ def any_descendant_alive(tree, node):
         if "l" in i.name:
             return(True)
 
+
+t = tr(args.tree, format = 1) # read phylo tree
+extant = []
+te = tr(os.path.join(*args.tree.split('/')[0:-1], "ExtantTree.nwk"), format = 1) # read phylo extant tree
+for i in te: extant.append(i.name)
+
+sample = []
+random.seed(1123581321)
+if args.sample == False:
+    sample = extant
+else:
+    sample = random.sample(extant,args.sample)
+
+# test one tree multiple events
+# ll=[2,4,8,12,13,14,15,16,17,18,19,20,21,23,25,30,33,34,38,40]
+# a=0
+# for i in t:
+#     a+=1
+#     if a in ll:
+#         sample.append(i.name)
+
+# end test
+
 # general ms parameters,if the parameters file existe the following default parameters are overruled
 if args.parameters == False:
     Ne = 100000
@@ -80,17 +103,6 @@ else:
     if not read_param("SEED") == 0:
         random.seed(int(read_param("SEED")))
         np.random.seed(int(read_param("SEED")))
-
-t = tr(args.tree, format = 1) # read phylo tree
-
-extant = []
-te = tr(os.path.join(*args.tree.split('/')[0:-1], "ExtantTree.nwk"), format = 1) # read phylo extant tree
-for i in te: extant.append(i.name)
-
-if args.sample == False:
-    sample = extant
-else:
-    sample = random.sample(extant,args.sample)
 
 t = tree_new_dist(t, n_generation_to_root)
 
