@@ -195,6 +195,53 @@ dev.off()
 
 
 
+# Ds error by RELATIVE distance P3P4
+
+Ds_error_by_dist<-function(temp){
+  ### expected
+  n_H0<-nrow(temp[temp$V14 == "P3P2"|temp$V14 == "P2P3"|temp$V14 == "P3P1"|
+    temp$V14 == "P1P3",])
+  # n_alt<-nrow(temp[temp$V14 == "N2P2"|temp$V14 == "OP1"|temp$V14 == "N2P1"|temp$V14 == "OP2",])
+  # n_alt<-nrow(temp[temp$V14 == "N2P2"|temp$V14 == "N2P1",])
+  n_alt<-nrow(temp[temp$V14 == "OP1"|temp$V14 == "OP2",])
+  exp_err<-n_alt/(n_alt+n_H0)
+
+  ### observed
+  # temp$V14<-temp$V9
+  signi_D<-temp[temp$V13<=0.05,]
+  true_pos<-nrow(signi_D[signi_D$V14 == "P3P2"|signi_D$V14 == "P2P3"|
+    signi_D$V14 == "P3P1"|signi_D$V14 == "P1P3",])
+  # alt<-nrow(signi_D[signi_D$V14 == "OP2"|signi_D$V14 == "OP1"|signi_D$V14 == "N2P1"|signi_D$V14 == "N2P2",])
+  # alt<-nrow(signi_D[signi_D$V14 == "N2P1"|signi_D$V14 == "N2P2",])
+  alt<-nrow(signi_D[signi_D$V14 == "OP1"|signi_D$V14 == "OP2",])
+  err_alt<-alt/(true_pos+alt)
+  return(exp_err)
+}
+
+truc<-function(t) {
+  t$V13<-p.adjust(t$V9,"fdr")
+  res<-as.data.frame(rbind(by(t, t$V15, function(x) Ds_error_by_dist(x))))
+  return(res)
+}
+
+relative<-function(x){
+  res<-x$V10/max(x$V10)
+  return(res)
+}
+
+block=0.1
+dataDist<-read.table('sim_5/Dstat',h=F)
+dataDist$V14<-as.factor(paste(dataDist$V11,dataDist$V12, sep=""))
+# RD calc
+dataDist$RD<-unlist(by(dataDist, dataDist$V1, function(x) relative(x)))
+dataDist$V15 = cut(dataDist$RD,seq(0,1,block))
+dataDist$V15<-as.factor(dataDist$V15)
+ed<-do.call(rbind,by(dataDist, dataDist$V1, function(x) truc(x)))
+m_ed<-apply(ed,2,function(x) mean(na.omit(x)))
+boxplot(ed, main= "ext = 0.0")
+points(m_ed, col='red')
+
+
 
 # test graphic
 
