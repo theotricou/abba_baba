@@ -31,91 +31,91 @@ else
 
 fi
 
-
-# temp TEST
-
-#!/usr/bin/env Rscript
-# Theo
-
-#shell
-
-for i in `seq 1001 1 1200`; do
-  sed "s/aaaa/$i/g" run_slurm.sh > temp
-  sbatch temp
-  rm temp
-done
-
-for i in test*;do
-  if [[ `ls $i | wc -l` != 8 ]]; then
-    if  [[ ! `squeue -o %j | grep -P "${i#test}"` ]]; then
-      echo $i
-      rm -rf $i
-    fi
-  fi
-done
-
-
-
-
-rm -rf D*
-for j in sim_*;do
-  cd $j
-  rm -rf D*
-  for i in test*; do
-    sed "1d" $i/data.txt | sed "s/^/$i\t/" >> Dstat
-    sed "1d" $i/data_D3.txt | sed "s/^/$i\t/" >> D3
-  done
-  cd ..
-  sed "s/^/$j\t/" $j/Dstat >> Dstat
-  sed "s/^/$j\t/" $j/D3 >> D3
-done
-
-
-for j in one_*;do
-  cd $j
-  rm -rf oneD*
-  for i in test*; do
-    sed "1d" $i/data.txt | sed "s/^/$i\t/" >> oneDstat
-    sed "1d" $i/data_D3.txt | sed "s/^/$i\t/" >> oneD3
-  done
-  cd ..
-  sed "s/^/$j\t/" $j/oneDstat >> oneDstat
-  sed "s/^/$j\t/" $j/oneD3 >> oneD3
-done
-
-sed "s/^/05\t/" oneDstat > oneDstat2
-
-
-
-
-
-# temp R truc
-
-require('ape')
-tree <- read.tree("aletree")
-d<-read.table('ale_transfers')
-
-
-edge<-tree$edge
-spnd<-c(tree$tip.label, tree$node.label)
-wherefrom<-which(spnd==from)
-whereto<-which(spnd==to)
-fromdad<-edge[edge[,2]==wherefrom,1]
-todad<-edge[edge[,2]==whereto,1]
-
-
-
-
-tresh=0.7
-a<-by(d,d[1],function(x) c(sum(x[x[,3]>tresh,3]),nrow(x)))
-b<-as.data.frame(t(do.call(cbind,a)))
-b$names<-as.character(rownames(b))
-rownames(b)<-NULL
-brl<-as.data.frame(cbind(br<-c(tree$tip.label,tree$node.label), c(0,tree$edge.length)))
-brl<-brl[order(brl[,1]),]
-b<-b[order(b$names),]
-b$dist<-brl$V2
-plot(as.numeric(as.character(b$dist)),b$V1, xlim=c(0,0.11))
-plot(as.numeric(as.character(b$dist)),b$V1)
-b[which(b$V1>140),]
-plot(b$V1, b$V2)
+#
+# # temp TEST
+#
+# #!/usr/bin/env Rscript
+# # Theo
+#
+# #shell
+#
+# for i in `seq 1001 1 1001`; do
+#   sed "s/aaaa/$i/g" run_slurm.sh > temp
+#   sbatch temp
+#   rm temp
+# done
+#
+# for i in test*;do
+#   if [[ `ls $i | wc -l` != 8 ]]; then
+#     if  [[ ! `squeue -o %j | grep -P "${i#test}"` ]]; then
+#       echo $i
+#       rm -rf $i
+#     fi
+#   fi
+# done
+#
+#
+#
+#
+# rm -rf D*
+# for j in sim_*;do
+#   cd $j
+#   rm -rf D*
+#   for i in test*; do
+#     sed "1d" $i/data.txt | sed "s/^/$i\t/" >> Dstat
+#     sed "1d" $i/data_D3.txt | sed "s/^/$i\t/" >> D3
+#   done
+#   cd ..
+#   sed "s/^/$j\t/" $j/Dstat >> Dstat
+#   sed "s/^/$j\t/" $j/D3 >> D3
+# done
+#
+#
+# for j in one_*;do
+#   cd $j
+#   rm -rf oneD*
+#   for i in test*; do
+#     sed "1d" $i/data.txt | sed "s/^/$i\t/" >> oneDstat
+#     sed "1d" $i/data_D3.txt | sed "s/^/$i\t/" >> oneD3
+#   done
+#   cd ..
+#   sed "s/^/$j\t/" $j/oneDstat >> oneDstat
+#   sed "s/^/$j\t/" $j/oneD3 >> oneD3
+# done
+#
+# sed "s/^/05\t/" oneDstat > oneDstat2
+#
+#
+#
+#
+#
+# # temp R truc
+#
+# require('ape')
+# tree <- read.tree("aletree")
+# d<-read.table('ale_transfers')
+#
+#
+# edge<-tree$edge
+# spnd<-c(tree$tip.label, tree$node.label)
+# wherefrom<-which(spnd==from)
+# whereto<-which(spnd==to)
+# fromdad<-edge[edge[,2]==wherefrom,1]
+# todad<-edge[edge[,2]==whereto,1]
+#
+#
+#
+#
+# tresh=0.7
+# a<-by(d,d[1],function(x) c(sum(x[x[,3]>tresh,3]),nrow(x)))
+# b<-as.data.frame(t(do.call(cbind,a)))
+# b$names<-as.character(rownames(b))
+# rownames(b)<-NULL
+# brl<-as.data.frame(cbind(br<-c(tree$tip.label,tree$node.label), c(0,tree$edge.length)))
+# brl<-brl[order(brl[,1]),]
+# b<-b[order(b$names),]
+# b$dist<-brl$V2
+# plot(as.numeric(as.character(b$dist)),b$V1, xlim=c(0,0.11))
+# plot(as.numeric(as.character(b$dist)),b$V1)
+# b[which(b$V1>140),]
+# plot(b$V1, b$V2)
