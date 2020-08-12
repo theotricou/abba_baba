@@ -19,9 +19,9 @@ if [ ! -d "$dir" ]; then
 
   singularity run $singularity python /simulation/ZOMBI/Zombi.py T $dir/zombi_parameters $dir
 
-  singularity run $singularity python ${path%run_same_tree.sh}python3/build_ms_command.py $dir/T/CompleteTree.nwk -p $dir/sim_parameters -s $sampling -o $dir -v
+  singularity run $singularity python ${path%run.sh}python3/build_ms_command.py $dir/T/CompleteTree.nwk -p $dir/sim_parameters -s $sampling -o $dir -v
 
-  singularity run $singularity Rscript ${path%run_same_tree.sh}R/ms_simulation.R $dir
+  singularity run $singularity Rscript ${path%run.sh}R/ms_simulation.R $dir
 
 else
 
@@ -39,11 +39,11 @@ fi
 #
 # #shell
 #
-# for i in `seq 1001 1 1001`; do
-#   sed "s/aaaa/$i/g" run_slurm.sh > temp
-#   sbatch temp
-#   rm temp
-# done
+for i in `seq 1001 1 1001`; do
+  sed "s/aaaa/$i/g" run_slurm.sh > temp
+  sbatch temp
+  rm temp
+done
 #
 # for i in test*;do
 #   if [[ `ls $i | wc -l` != 8 ]]; then
