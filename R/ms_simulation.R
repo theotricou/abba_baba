@@ -89,9 +89,12 @@ D_stat <- function(stat_simulation, q){
   "P3" = q[3], "P4" = q[4],
   "abba" = abba, "baba" = baba, "D" = D,
   "Pvalue" = binom.test(c(abba, baba), p = 0.5)$p.value,
-  "d_N2" = dist_p13_p14,
-  "d_N3" = Rdist_p13_p14,
-  "Donor" = donor, "Recip" = recip)
+  # "d_N2" = dist_p13_p14,
+  # "d_N3" = Rdist_p13_p14,
+  "Donor" = donor, "Recip" = recip,
+  "dP1P2" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[2]))], "@")[[1]][2]),
+  "dP1P3" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[3]))], "@")[[1]][2]),
+  "dP1P4" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[4]))], "@")[[1]][2]),)
   return(data)
 }
 
