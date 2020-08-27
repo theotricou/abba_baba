@@ -94,7 +94,7 @@ D_stat <- function(stat_simulation, q){
   "Donor" = donor, "Recip" = recip,
   "dP1P2" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[2]))], "@")[[1]][2]),
   "dP1P3" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[3]))], "@")[[1]][2]),
-  "dP1P4" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[4]))], "@")[[1]][2]),)
+  "dP1P4" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[4]))], "@")[[1]][2]))
   return(data)
 }
 
