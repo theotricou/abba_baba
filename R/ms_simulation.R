@@ -79,22 +79,49 @@ D_stat <- function(stat_simulation, q){
   abba <- sum(apply(stat_simulation[c(p1, p2, p3, p4),], 2, function(x) is_abba(x)))
   baba <- sum(apply(stat_simulation[c(p1, p2, p3, p4),], 2, function(x) is_baba(x)))
   if ((abba + baba) != 0) {D = (abba - baba) / (abba + baba)} else {D = 0}
-  ng_p3 <- as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[3]))], "@")[[1]][2])
-  ng_p4 <- as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[4]))], "@")[[1]][2])
-  dist_p13_p14 <- ng_p4 - ng_p3
-  Rdist_p13_p14 <- dist_p13_p14 / (max_d_to_extant_outgroup - ng_p3)
+  # ng_p3 <- as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[3]))], "@")[[1]][2])
+  # ng_p4 <- as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[4]))], "@")[[1]][2])
+  # dist_p13_p14 <- ng_p4 - ng_p3
+  # Rdist_p13_p14 <- dist_p13_p14 / (max_d_to_extant_outgroup - ng_p3)
   donor = where_is_Daldo(q[1], q[2], q[3], q[4])
   recip = where_is_Raldo(q[1], q[2], q[3], q[4])
-  data <- c("P1" = q[1], "P2" = q[2],
-  "P3" = q[3], "P4" = q[4],
-  "abba" = abba, "baba" = baba, "D" = D,
-  "Pvalue" = binom.test(c(abba, baba), p = 0.5)$p.value,
-  # "d_N2" = dist_p13_p14,
-  # "d_N3" = Rdist_p13_p14,
-  "Donor" = donor, "Recip" = recip,
-  "dP1P2" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[2]))], "@")[[1]][2]),
-  "dP1P3" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[3]))], "@")[[1]][2]),
-  "dP1P4" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[4]))], "@")[[1]][2]))
+  data <- c(
+    "P1" = q[1],
+    "P2" = q[2],
+    "P3" = q[3],
+    "P4" = q[4],
+    "abba" = abba,
+    "baba" = baba,
+    "D" = D,
+    "Pvalue" = binom.test(c(abba, baba), p = 0.5)$p.value,
+    # "d_N2" = dist_p13_p14,
+    # "d_N3" = Rdist_p13_p14,
+    "Donor" = donor,
+    "Recip" = recip,
+    "dP1P2" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[2]))], "@")[[1]][2]),
+    "dP1P3" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[3]))], "@")[[1]][2]),
+    "dP1P4" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[4]))], "@")[[1]][2])
+  )
+  return(data)
+}
+
+D3_v2<-function(matrice, t){
+  P1<-da[da$nu == t[1],3]
+  P2<-da[da$nu == t[2],3]
+  P3<-da[da$nu == t[3],3]
+  D3<-(matrice[P2,P3]-matrice[P1,P3])/(matrice[P2,P3]+matrice[P1,P3])
+  D3_donor<-position_D_in_tree(t[1],t[2],t[3])
+  D3_recip<-position_R_in_tree(t[1],t[2],t[3])
+  data <- c(
+    "P1" = t[1],
+    "P2" = t[2],
+    "P3" = t[3],
+    "D3" = as.numeric(D3),
+    "Donor" = D3_donor,
+    "Recip" = D3_recip,
+    "dP1P2" = as.integer(strsplit(spnd[mrca.phylo(tree, c(t[1], t[2]))], "@")[[1]][2]),
+    "dP1P3" = as.integer(strsplit(spnd[mrca.phylo(tree, c(t[1], t[3]))], "@")[[1]][2])
+)
   return(data)
 }
 
@@ -145,20 +172,6 @@ position_R_in_tree<-function(p1,p2,p3){
   else{return("O")}
 }
 
-D3_v2<-function(matrice, t){
-  P1<-da[da$nu == t[1],3]
-  P2<-da[da$nu == t[2],3]
-  P3<-da[da$nu == t[3],3]
-  D3<-(matrice[P2,P3]-matrice[P1,P3])/(matrice[P2,P3]+matrice[P1,P3])
-  D3_donor<-position_D_in_tree(t[1],t[2],t[3])
-  D3_recip<-position_R_in_tree(t[1],t[2],t[3])
-  data <- c(
-    "D3" = as.numeric(D3),
-    "Donor" = D3_donor,
-    "Recip" = D3_recip)
-  return(data)
-}
-
 uniquer<-function(x){
   if (ncol(x$seg_sites[[1]]) == 1) { # ajouter filtre sur site sum(seg) == 1
       return(x$seg_sites[[1]][[1]])}
@@ -172,7 +185,7 @@ tree <- read.tree(file.path(output, "spe_tree"))
 extant<-grep("l>",tree$tip.label)
 tr<-keep.tip(tree, tree$tip.label[extant])
 da<-data.frame(na=tree$tip.label[extant], nu=extant, ge=paste("s",1:length(extant),sep=""))
-max_d_to_extant_outgroup <- max(cophenetic(tr))/2
+# max_d_to_extant_outgroup <- max(cophenetic(tr))/2
 
 cat("step 2 : running simulation \n")
 
@@ -245,7 +258,8 @@ sum_mat<-Reduce('+',list_submat)
 cat("step 5 : computing D3\n")
 
 # results<-cbind(topologiesD3,as.data.frame(t(apply(topologiesD3, 1, function(x) D3_v2(sum_mat, x)))))
-results<-cbind(topologiesD3,do.call(rbind,mclapply(as.data.frame(t(topologiesD3)), function(x) D3_v2(sum_mat, x),mc.cores = N_CORE)))
+# results<-cbind(topologiesD3,do.call(rbind,mclapply(as.data.frame(t(topologiesD3)), function(x) D3_v2(sum_mat, x),mc.cores = N_CORE)))
+results<-do.call(rbind,mclapply(as.data.frame(t(topologiesD3)), function(x) D_stat(sum_mat, x),mc.cores = N_CORE))
 
 cat("step 6 : output D3\n")
 
