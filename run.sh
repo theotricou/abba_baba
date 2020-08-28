@@ -39,12 +39,47 @@ fi
 #
 # #shell
 #
-for i in `seq 1001 1 1001`; do
+
+
+scancel -u tricou
+rm -rf test* slurm*
+
+for i in `seq 1001 1 1500`; do
   sed "s/aaaa/$i/g" run_slurm.sh > temp
   sbatch temp
   rm temp
 done
-#
+
+
+rm data_D.txt data_D3.txt
+files=(test*)
+# get the 1st element of the array
+first=${files[0]}
+# remove the 1st element of from array
+files=("${files[@]:1}")
+# process the 1st element
+sed "s/^/`echo $first`\t/" $first/data.txt > data_D.txt
+sed "s/^/`echo $first`\t/" $first/data_D3.txt > data_D3.txt
+name=`echo $first`
+sed -i -e "0,/$name/ s/$name/test\t/" data_D.txt
+sed -i -e "0,/$name/ s/$name/test\t/" data_D3.txt
+# process the remaining elements
+for i in "${files[@]}"; do
+  sed "1d" $i/data.txt | sed "s/^/$i\t/" >> data_D.txt
+  sed "1d" $i/data_D3.txt | sed "s/^/$i\t/" >> data_D3.txt
+done
+head data_D.txt
+head data_D3.txt
+
+
+
+for i in test*; do
+  echo $i `grep -oh " at .*" $i/ms_command.R | awk '{print $2}'`
+done > TR_time
+
+
+
+
 # for i in test*;do
 #   if [[ `ls $i | wc -l` != 8 ]]; then
 #     if  [[ ! `squeue -o %j | grep -P "${i#test}"` ]]; then
