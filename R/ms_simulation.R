@@ -7,7 +7,6 @@ args = commandArgs(trailingOnly=TRUE)
 cat("step 1 : initializing \n")
 
 output=args[1]
-# output<-'test3000'
 source(paste(output,"ms_command.R", sep ="/"))
 source(paste(output,"sim_parameters", sep ="/"))
 library(parallel)
@@ -71,6 +70,20 @@ where_is_Daldo<-function(p1,p2,p3,p4){
       else {return("N1")}
 }}}
 
+N2_diversity<-function(q){
+  a<-mrca.phylo(tree, spnd[unlist(q)])
+  p1p4Desc<-Descendants(tree, mrca.phylo(tree, spnd[q]),type="tip")[[1]]
+  p1p3Desc<-Descendants(tree, mrca.phylo(tree, spnd[q][c(1:3)]),type="tip")[[1]]
+  p0<-c(q[4],Ancestors(tree, q[4], type = "all"))
+  p4Desc<-Descendants(tree,p0[which(p0 == a)-1],type="tip")[[1]]
+  all<-c(p1p3Desc,p4Desc)
+  `%notin%` <- Negate(`%in%`)
+  N2_tips<-p1p4Desc[p1p4Desc %notin% all]
+  n_hidden<-length(N2_tips)
+  n_ext<-length(grep("s>",tree$tip.label[N2_tips]))
+  return(c("H"=n_hidden, "E"=n_ext))
+}
+
 D_stat <- function(stat_simulation, q){
   p1 = which(da$nu == q[1])
   p2 = which(da$nu == q[2])
@@ -79,12 +92,9 @@ D_stat <- function(stat_simulation, q){
   abba <- sum(apply(stat_simulation[c(p1, p2, p3, p4),], 2, function(x) is_abba(x)))
   baba <- sum(apply(stat_simulation[c(p1, p2, p3, p4),], 2, function(x) is_baba(x)))
   if ((abba + baba) != 0) {D = (abba - baba) / (abba + baba)} else {D = 0}
-  # ng_p3 <- as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[3]))], "@")[[1]][2])
-  # ng_p4 <- as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[4]))], "@")[[1]][2])
-  # dist_p13_p14 <- ng_p4 - ng_p3
-  # Rdist_p13_p14 <- dist_p13_p14 / (max_d_to_extant_outgroup - ng_p3)
   donor = where_is_Daldo(q[1], q[2], q[3], q[4])
   recip = where_is_Raldo(q[1], q[2], q[3], q[4])
+  N2_tips<-N2_diversity(c(q[1], q[2], q[3], q[4]))
   data <- c(
     "P1" = q[1],
     "P2" = q[2],
@@ -94,13 +104,13 @@ D_stat <- function(stat_simulation, q){
     "baba" = baba,
     "D" = D,
     "Pvalue" = binom.test(c(abba, baba), p = 0.5)$p.value,
-    # "d_N2" = dist_p13_p14,
-    # "d_N3" = Rdist_p13_p14,
     "Donor" = donor,
     "Recip" = recip,
     "dP1P2" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[2]))], "@")[[1]][2]),
     "dP1P3" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[3]))], "@")[[1]][2]),
-    "dP1P4" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[4]))], "@")[[1]][2])
+    "dP1P4" = as.integer(strsplit(spnd[mrca.phylo(tree, c(q[1], q[4]))], "@")[[1]][2]),
+    "N2_H"=N2_tips[1],
+    "N2_E"=N2_tips[2]
   )
   return(data)
 }
@@ -116,12 +126,14 @@ D3_v2<-function(matrice, t){
     "P1" = t[1],
     "P2" = t[2],
     "P3" = t[3],
+    "dp23" = matrice[P2,P3],
+    "dp13" = matrice[P1,P3],
     "D3" = as.numeric(D3),
     "Donor" = D3_donor,
     "Recip" = D3_recip,
     "dP1P2" = as.integer(strsplit(spnd[mrca.phylo(tree, c(t[1], t[2]))], "@")[[1]][2]),
     "dP1P3" = as.integer(strsplit(spnd[mrca.phylo(tree, c(t[1], t[3]))], "@")[[1]][2])
-)
+  )
   return(data)
 }
 
@@ -203,10 +215,6 @@ if (SEED == 0) {rep = simulate(model, nsim = N_SIMULATION, cores = N_CORE)
                mc.set.seed = TRUE
   )
 }
-#
-# uniq <- lapply(rep, function(x){
-#   if (ncol(x$seg_sites[[1]]) == 1) {
-#       return(x$seg_sites[[1]][[1]])}})
 
 uniq<-mclapply(rep, function(x) uniquer(x),mc.cores = N_CORE)
 
@@ -224,16 +232,12 @@ sites <- do.call("cbind", uniq)
 sites <- sites[, colSums(sites != 0) > 1]
 topologiesD <- getquatuors(tr)
 topologiesD <- apply(topologiesD,c(1,2), function(x) da[as.character(da$na) == as.character(x),2])
-
 spnd<-c(tree$tip.label, tree$node.label)
 true_donor = which(spnd == name_donor) # from variable in sourced file
 true_recip = which(spnd == name_recip) # from variable in sourced file
 
 cat("step 3 : computing D stat \n")
 
-# results <- as.data.frame(t(apply(topologiesD, 1, function(x) D_stat(sites, x)))) # bottleneck
-
-# parallel for speed
 results<-do.call(rbind,mclapply(as.data.frame(t(topologiesD)), function(x) D_stat(sites, x),mc.cores = N_CORE))
 
 cat("step 4 : output D\n")
@@ -247,19 +251,15 @@ topologiesD3 <- gettrios(tr)
 topologiesD3 <- apply(topologiesD3,c(1,2), function(x) da[as.character(da$na) == as.character(x),2])
 colnames(topologiesD3)<-c('P1','P2','P3')
 single_trees <- lapply(single_trees, function(x) read.tree(text=x))
-# single_trees <- mclapply(single_trees, function(x) read.tree(text=x),mc.cores = N_CORE)
 ord<-sort(row.names(cophenetic(single_trees[[1]])))
 blocks<-seq(1,length(single_trees), by=50000)
 fromto<-cbind(blocks,c(blocks[-1]-1, length(single_trees)))
 list_submat<-lapply(1:length(blocks),function(x) devil_mambojambo(x))
-# list_submat<-mclapply(1:length(blocks),function(x) devil_mambojambo(x),mc.cores = N_CORE)
 sum_mat<-Reduce('+',list_submat)
 
 cat("step 5 : computing D3\n")
 
-# results<-cbind(topologiesD3,as.data.frame(t(apply(topologiesD3, 1, function(x) D3_v2(sum_mat, x)))))
-# results<-cbind(topologiesD3,do.call(rbind,mclapply(as.data.frame(t(topologiesD3)), function(x) D3_v2(sum_mat, x),mc.cores = N_CORE)))
-results<-do.call(rbind,mclapply(as.data.frame(t(topologiesD3)), function(x) D_stat(sum_mat, x),mc.cores = N_CORE))
+results<-do.call(rbind,mclapply(as.data.frame(t(topologiesD3)), function(x) D3_v2(sum_mat, x),mc.cores = N_CORE))
 
 cat("step 6 : output D3\n")
 
