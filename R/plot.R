@@ -1,571 +1,8 @@
-# Dz error rate
-error_Ds<-function(temp){
-  n_H0<-nrow(temp[temp$V14 == "P3P2"|temp$V14 == "P2P3"|temp$V14 == "P3P1"|temp$V14 == "P1P3",])
-  # n_alt<-nrow(temp[temp$V14 == "N2P2"|temp$V14 == "OP1"|temp$V14 == "N2P1"|temp$V14 == "OP2",])
-  n_alt<-nrow(temp[temp$V14 == "N2P2"|temp$V14 == "N2P1",])
-  exp_err<-n_alt/(n_alt+n_H0)
-  temp$V15<-(p.adjust(temp$V9,"fdr"))
-  # temp$V14<-temp$V9
-  signi_D<-temp[temp$V15<=0.05,]
-  true_pos<-nrow(signi_D[signi_D$V14 == "P3P2"|signi_D$V14 == "P2P3"|signi_D$V14 == "P3P1"|signi_D$V14 == "P1P3",])
-  # alt=nrow(signi_D[signi_D$V14 == "OP2"|signi_D$V14 == "OP1"|signi_D$V14 == "N2P1"|signi_D$V14 == "N2P2",])
-  alt=nrow(signi_D[signi_D$V14 == "N2P1"|signi_D$V14 == "N2P2",])
-  err_alt=alt/(true_pos+alt)
-  sen_H0<-true_pos/n_H0
-  sen_Ha<-alt/n_alt
-  err_all=true_pos/nrow(signi_D)
-  data=c("s" = levels(dataD$V1)[temp$V1[1]],
-  # "t" = levels(dataD[dataD$V1 == levels(dataD$V1)[temp$V1[1]], 2])[temp$V2[1]],
-  "n" =n_H0+n_alt , "err_H0"=sen_H0,"err_Ha"=sen_Ha,"err_D"=err_all,"err_exp" = exp_err,"err_obs" = err_alt)
-  return(data)
-}
-
-pvalue<-function(lD3,D3) {
-  pvalue<-length(lD3[lD3>D3])/length(lD3)
-  return(pvalue)
-}
-
-error_D3<-function(temp){
-  n_H0<-nrow(temp[temp$V9 == "P3P2"|temp$V9 == "P2P3"|temp$V9 == "P3P1"|temp$V9 == "P1P3",])
-  n_alt<-nrow(temp[temp$V9 == "OP1"|temp$V9 == "OP2",])
-  exp_err<-n_alt/(n_alt+n_H0)
-  nulD3<-temp[temp$V9 == "P2P2"|temp$V9 == "P1P1"|temp$V9 == "P3P3"|temp$V9 == "N1N1"|
-    temp$V9 == "N1P3"|temp$V9 == "N1O"|temp$V9 == "P1O"|temp$V9 == "P1N1"|
-    temp$V9 == "P2N1"|temp$V9 == "P3N1"|temp$V9 == "P2O"|temp$V9 == "P3O"|
-    temp$V9 == "OO"|temp$V9 == "OP3",]
-  temp$V10<-unlist(lapply(temp$V6,function(x) pvalue(abs(nulD3$V6),abs(x))))
-  temp$V11<-p.adjust(temp$V10,"fdr")
-  # temp$V11<-temp$V10
-  signi_D<-temp[temp$V10<=0.05,]
-  true_pos<-nrow(signi_D[signi_D$V9 == "P3P2"|signi_D$V9 == "P2P3"|
-    signi_D$V9 == "P3P1"|signi_D$V9 == "P1P3",])
-  alt=nrow(signi_D[signi_D$V9 == "OP2"|signi_D$V9 == "OP1",])
-  err_alt=alt/(true_pos+alt)
-  sen_H0<-true_pos/n_H0
-  sen_Ha<-alt/n_alt
-  err_all=true_pos/nrow(signi_D)
-  data=c("s" = levels(dataD3$V1)[temp$V1[1]],"n"=n_H0+n_alt, "err_H0"=sen_H0,"err_Ha"=sen_Ha,"err_D"=err_all,"err_exp" = exp_err,"err_obs" = err_alt)
-  return(data)
-}
-
-dataD<-read.table('Dstat',h=F)
-dataD$V14<-as.factor(paste(dataD$V12,dataD$V13, sep=""))
-resD<-as.data.frame(do.call(rbind,by(dataD, dataD[,1:2], function(x) error_Ds(x))))
-library(reshape2)
-resD$s<-as.factor(resD$s)
-
-temp<-resD[,c(1,6,7)]
-colnames(temp)<-c('ex','obs','exp')
-temp$obs<-as.numeric(as.character(temp$obs))
-temp$exp<-as.numeric(as.character(temp$exp))
-temp = (melt(temp, id=("ex")))
-mean_err<-rbind(by(temp, temp[,c(2,1)], function(x) mean(na.omit(x$value))))
-
-
-
-
-resD2<-resD[resD$err_exp != 0,]
-temp<-resD2[,c(1,6,7)]
-colnames(temp)<-c('ex','obs','exp')
-temp$obs<-as.numeric(as.character(temp$obs))
-temp$exp<-as.numeric(as.character(temp$exp))
-temp = (melt(temp, id=("ex")))
-mean_err<-rbind(by(temp, temp[,c(2,1)], function(x) mean(na.omit(x$value))))
-
-
-
-
-pdf(file = "Dstat_error_no_out.pdf", width = 8, height = 8)
-boxplot(temp$value~temp$variable+temp$ex,las = 1,
-  main="D stat error (expected vs observed) by extinction rate",
-  col = rep(c("white", "grey"), each = 1),
-    names=c("exp\n0.0","obs\n0.0","exp\n0.1","obs\n0.1","exp\n0.5","obs\n0.5",
-    "exp\n0.9","obs\n0.9"),cex.axis = 0.75,
-   yaxt="n" )
-axis(side = 2, at = pretty(0:1,10))
-points(mean_err[c(2,1,4,3,6,5,8,7)],col="red",pch=18, cex = 2)
-dev.off()
-
-
-
-
-pdf(file = "one_tree_error_v2.pdf", width = 8, height = 8)
-boxplot(temp$value~temp$variable+temp$ex,las = 1,
-  main="D stat error (expected vs observed) by extinction rate",
-  col = rep(c("white", "grey"), each = 1),
-  cex.axis = 0.75, yaxt="n" )
-axis(side = 2, at = pretty(0:1,10))
-dev.off()
-
-
-
-dataD3<-read.table('D3',h=F)
-dataD3$V9<-as.factor(paste(dataD3$V7,dataD3$V8, sep=""))
-res3<-as.data.frame(do.call(rbind,by(dataD3, dataD3[,1:2], function(x) error_D3(x))))
-
-library(reshape2)
-res3$s<-as.factor(resD$s)
-temp<-res3[,c(1,6,7)]
-colnames(temp)<-c('ex','obs','exp')
-temp$obs<-as.numeric(as.character(temp$obs))
-temp$exp<-as.numeric(as.character(temp$exp))
-temp = (melt(temp, id=("ex")))
-
-
-pdf(file = "D3_error.pdf", width = 8, height = 8)
-boxplot(temp$value~temp$variable+temp$ex,las = 1,
-  main="D3 error (expected vs observed) by extinction rate",
-  col = rep(c("white", "grey"), each = 1),
-    names=c("exp\n0.0","obs\n0.0","exp\n0.1","obs\n0.1","exp\n0.5","obs\n0.5",
-    "exp\n0.9","obs\n0.9"),cex.axis = 0.75,
-   yaxt="n" )
-axis(side = 2, at = pretty(0:1,10))
-dev.off()
-
-# Ds error by distance P3P4
-
-Ds_error_by_dist<-function(temp){
-  ### expected
-  n_H0<-nrow(temp[temp$V14 == "P3P2"|temp$V14 == "P2P3"|temp$V14 == "P3P1"|temp$V14 == "P1P3",])
-  # n_alt<-nrow(temp[temp$V14 == "N2P2"|temp$V14 == "OP1"|temp$V14 == "N2P1"|temp$V14 == "OP2",])
-  # n_alt<-nrow(temp[temp$V14 == "N2P2"|temp$V14 == "N2P1",])
-  n_alt<-nrow(temp[temp$V14 == "OP1"|temp$V14 == "OP2",])
-  exp_err<-n_alt/(n_alt+n_H0)
-
-  ### observed
-  # temp$V14<-temp$V9
-  signi_D<-temp[temp$V13<=0.05,]
-  true_pos<-nrow(signi_D[signi_D$V14 == "P3P2"|signi_D$V14 == "P2P3"|signi_D$V14 == "P3P1"|signi_D$V14 == "P1P3",])
-  # alt<-nrow(signi_D[signi_D$V14 == "OP2"|signi_D$V14 == "OP1"|signi_D$V14 == "N2P1"|signi_D$V14 == "N2P2",])
-  # alt<-nrow(signi_D[signi_D$V14 == "N2P1"|signi_D$V14 == "N2P2",])
-  alt<-nrow(signi_D[signi_D$V14 == "OP1"|signi_D$V14 == "OP2",])
-  err_alt<-alt/(true_pos+alt)
-  return(exp_err)
-}
-
-truc<-function(t) {
-  t$V13<-p.adjust(t$V9,"fdr")
-  res<-as.data.frame(rbind(by(t, t$V15, function(x) Ds_error_by_dist(x))))
-  return(res)
-}
-
-
-par(mfrow=c(2,2))
-block=100000
-
-
-pdf(file = "Dstat_dist_err.pdf", width = 8, height = 8)
-
-par(mfrow=c(2,2))
-block=200000
-dataDist<-read.table('sim_0/Dstat',h=F)
-dataDist$V14<-as.factor(paste(dataDist$V11,dataDist$V12, sep=""))
-dataDist$V15 = cut(dataDist$V10,seq(0,1000000,block))
-dataDist$V15<-as.factor(dataDist$V15)
-ed<-do.call(rbind,by(dataDist, dataDist$V1, function(x) truc(x)))
-m_ed<-apply(ed,2,function(x) mean(na.omit(x)))
-boxplot(ed, main= "ext = 0.0")
-points(m_ed, col='red')
-dataDist<-read.table('sim_1/Dstat',h=F)
-dataDist$V14<-as.factor(paste(dataDist$V11,dataDist$V12, sep=""))
-dataDist$V15 = cut(dataDist$V10,seq(0,1000000,block))
-dataDist$V15<-as.factor(dataDist$V15)
-ed<-do.call(rbind,by(dataDist, dataDist$V1, function(x) truc(x)))
-m_ed<-apply(ed,2,function(x) mean(na.omit(x)))
-boxplot(ed, main= "ext = 0.1")
-points(m_ed, col='red')
-dataDist<-read.table('sim_5/Dstat',h=F)
-dataDist$V14<-as.factor(paste(dataDist$V11,dataDist$V12, sep=""))
-dataDist$V15 = cut(dataDist$V10,seq(0,1000000,block))
-dataDist$V15<-as.factor(dataDist$V15)
-ed<-do.call(rbind,by(dataDist, dataDist$V1, function(x) truc(x)))
-m_ed<-apply(ed,2,function(x) mean(na.omit(x)))
-boxplot(ed, main= "ext = 0.5")
-points(m_ed, col='red')
-dataDist<-read.table('sim_9/Dstat',h=F)
-dataDist$V14<-as.factor(paste(dataDist$V11,dataDist$V12, sep=""))
-dataDist$V15 = cut(dataDist$V10,seq(0,1000000,block))
-dataDist$V15<-as.factor(dataDist$V15)
-ed<-do.call(rbind,by(dataDist, dataDist$V1, function(x) truc(x)))
-m_ed<-apply(ed,2,function(x) mean(na.omit(x)))
-boxplot(ed, main= "ext = 0.9")
-points(m_ed, col='red')
-
-dev.off()
-
-
-
-# Ds error by RELATIVE distance P3P4
-
-# Ds_error_by_dist<-function(temp){
-#   ### expected
-#   n_H0<-nrow(temp[temp$EV == "P3P2"|temp$EV == "P2P3"|temp$EV == "P3P1"|
-#     temp$EV == "P1P3",])
-#   # n_alt<-nrow(temp[temp$V14 == "N2P2"|temp$V14 == "OP1"|temp$V14 == "N2P1"|temp$V14 == "OP2",])
-#   # n_alt<-nrow(temp[temp$V14 == "N2P2"|temp$V14 == "N2P1",])
-#   n_alt<-nrow(temp[temp$EV == "N2P1"|temp$EV == "N2P2",])
-#   exp_err<-n_alt/(n_alt+n_H0)
-#
-#   ### observed
-#   # temp$V14<-temp$V9
-#   signi_D<-temp[temp$Adjust<=0.05,]
-#   true_pos<-nrow(signi_D[signi_D$EV == "P3P2"|signi_D$EV == "P2P3"|
-#     signi_D$EV == "P3P1"|signi_D$EV == "P1P3",])
-#   # alt<-nrow(signi_D[signi_D$V14 == "OP2"|signi_D$V14 == "OP1"|signi_D$V14 == "N2P1"|signi_D$V14 == "N2P2",])
-#   # alt<-nrow(signi_D[signi_D$V14 == "N2P1"|signi_D$V14 == "N2P2",])
-#   alt<-nrow(signi_D[signi_D$EV == "N2P1"|signi_D$EV == "N2P2",])
-#   obs_err<-alt/(true_pos+alt)
-#   return(obs_err)
-# }
-
-adjus<-function(t) {
-  return(p.adjust(t$Pvalue,"fdr"))
-}
-
-truc<-function(t) {
-  res<-as.data.frame(rbind(by(t, t$Block, function(x) Ds_error_by_dist(x))))
-  return(res)
-}
-
-dist_relative<-function(x){
-  N2<-x$dP1P4 - x$dP1P3
-  res<-N2/max(N2)
-  return(res)
-}
-
-Ds_error_by_dist<-function(temp){
-  ### expected
-  n_H0<-nrow(temp[temp$EV == "P3P2"|temp$EV == "P2P3"|temp$EV == "P3P1"|
-    temp$EV == "P1P3",])
-  n_alt<-nrow(temp[temp$EV == "N2P1"|temp$EV == "N2P2",])
-  exp_err<-n_alt/(n_alt+n_H0)
-
-  ### observed
-  signi_D<-temp[temp$Adjust<=0.05,]
-  true_pos<-nrow(signi_D[signi_D$EV == "P3P2"|signi_D$EV == "P2P3"|
-    signi_D$EV == "P3P1"|signi_D$EV == "P1P3",])
-  alt<-nrow(signi_D[signi_D$EV == "N2P1"|signi_D$EV == "N2P2",])
-  obs_err<-alt/(true_pos+alt)
-  return(obs_err)
-}
-
-out<-function(temp){
-  ### observed
-  signi_D<-temp[temp$Adjust<=0.05,]
-  true_pos<-nrow(signi_D[signi_D$EV == "P3P2"|signi_D$EV == "P2P3"|
-    signi_D$EV == "P3P1"|signi_D$EV == "P1P3",])
-  alt<-nrow(signi_D[signi_D$EV == "OP1"|signi_D$EV == "OP2",])
-  obs_err<-alt/(true_pos+alt)
-  return(obs_err)
-}
-
-truc2<-function(t) {
-  res<-as.data.frame(rbind(by(t, t$Block, function(x) out(x))))
-  return(res)
-}
-
-
-# par(mfrow=c(1,3))
-
-
-dataDist<-read.table('new_05/data_D.txt',h=T)
-dataDist$EV<-as.factor(paste(dataDist$Donor,dataDist$Recip, sep=""))
-# RD calc
-dataDist$RD<-unlist(by(dataDist, dataDist$test, function(x) dist_relative(x)))
-block=0.1
-dataDist$Block = as.factor(cut(dataDist$RD,seq(0,1,block)))
-dataDist$Adjust<-unlist(by(dataDist, dataDist$test, function(x) adjus(x)))
-ed<-do.call(rbind,by(dataDist, dataDist$test, function(x) truc(x)))
-m_ed<-apply(ed,2,function(x) mean(na.omit(x)))
-oed<-do.call(rbind,by(dataDist, dataDist$test, function(x) truc2(x)))
-om_ed<-apply(oed,2,function(x) mean(na.omit(x)))
-boxplot(ed, main= "ext = 0.5")
-points(m_ed, col='red')
-points(om_ed, col='blue')
-
-
-
-block=100000
-dataDist$Block = as.factor(cut(dataDist$dist,seq(0,1000000,block)))
-dataDist$Adjust<-unlist(by(dataDist, dataDist$test, function(x) adjus(x)))
-ed<-do.call(rbind,by(dataDist, dataDist$test, function(x) truc(x)))
-m_ed<-apply(ed,2,function(x) mean(na.omit(x)))
-
-
-
-
-
-
-
-
-
-
-# test graphic
-
-dataDist<-read.table('sim_0/Dstat',h=F)
-dataDist$V13<-as.factor(paste(dataDist$V11,dataDist$V12, sep=""))
-tempDs<-dataDist[order(dataDist$V13,dataDist$V8),]
-plot(tempDs$V8)
-table(tempDs$V13)
-
-
-
-dataD3<-read.table('sim_0/D3',h=F)
-dataD3$V8<-as.factor(paste(dataD3$V6,dataD3$V7, sep=""))
-tempD3<-dataD3[order(dataD3$V8,dataD3$V5),]
-plot(tempD3$V5)
-table(tempD3$V8)
-
-
-
-
-mean_ev_D3<-as.data.frame(cbind(by(tempD3, tempD3$V8, function(x) mean(x[,5]))))
-mean_ev_D3$V2<-rownames(mean_ev_D3)
-
-pdf(file = "D3_mean_ev.pdf", width = 16, height = 8)
-plot(mean_ev_D3$V1,xaxt="n")
-axis(side = 1, at = seq(1:25),labels = mean_ev_D3$V2, cex.axis = 0.75)
-dev.off()
-
-
-mean_ev_Ds<-as.data.frame(cbind(by(dataDist, dataDist$V13, function(x) mean(x[,8]))))
-mean_ev_Ds$V2<-rownames(mean_ev_Ds)
-
-pdf(file = "Ds_mean_ev.pdf", width = 16, height = 8)
-plot(mean_ev_Ds$V1,xaxt="n")
-axis(side = 1, at = seq(1:nrow(mean_ev_Ds)),labels = mean_ev_Ds$V2, cex.axis = 0.45)
-dev.off()
-
-pdf(file = "Ds_mean_ev_V2.pdf", width = 16, height = 8)
-boxplot(V8~V13, data=dataDist,cex.axis = 0.45,outline=FALSE)
-dev.off()
-
-pdf(file = "D3_mean_ev_V2.pdf", width = 16, height = 8)
-boxplot(V5~V8, data=dataD3,cex.axis = 0.75, outline=FALSE)
-dev.off()
-
-
-
-
-
-
-
-
-
-library('apTreeshape')
-
-
-t1=read.tree('spe09')
-extant<-grep("l>",t1$tip.label)
-t1<-as.treeshape(keep.tip(t1, t1$tip.label[extant]))
-colless(t1)
-
-
-colless(t1)
-
-
-
-
-
-
-
-
-
-
-
-############
-#Sampling effect
-#One tree, x transfers events, 10 random sampling rate
-
-
-
-set.seed(123456789)
-data<-read.table('oneDstat2',h=F)
-data$V14<-as.factor(paste(data$V12,data$V13, sep=""))
-ind<-unique(c(unique(data$V3),unique(data$V4),unique(data$V5),unique(data$V6)))
-
-
-
-
-
-lvl<-seq(4,length(ind),((length(ind)-4)/10))
-
-lapply(lvl, function(x) sampling_error(x))
-
-error_Ds<-function(temp){
-  n_H0<-nrow(temp[temp$V14 == "P3P2"|temp$V14 == "P2P3"|temp$V14 == "P3P1"|temp$V14 == "P1P3",])
-  n_alt<-nrow(temp[temp$V14 == "N2P2"|temp$V14 == "OP1"|temp$V14 == "N2P1"|temp$V14 == "OP2",])
-  exp_err<-n_alt/(n_alt+n_H0)
-  temp$V15<-(p.adjust(temp$V9,"fdr"))
-  # temp$V14<-temp$V9
-  signi_D<-temp[temp$V15<=0.05,]
-  true_pos<-nrow(signi_D[signi_D$V14 == "P3P2"|signi_D$V14 == "P2P3"|signi_D$V14 == "P3P1"|signi_D$V14 == "P1P3",])
-  alt=nrow(signi_D[signi_D$V14 == "OP2"|signi_D$V14 == "OP1"|signi_D$V14 == "N2P1"|signi_D$V14 == "N2P2",])
-  err_alt=alt/(true_pos+alt)
-  sen_H0<-true_pos/n_H0
-  sen_Ha<-alt/n_alt
-  err_all=true_pos/nrow(signi_D)
-  data=c("s" = levels(dataD$V1)[temp$V1[1]],
-  # "t" = levels(dataD[dataD$V1 == levels(dataD$V1)[temp$V1[1]], 2])[temp$V2[1]],
-  "n" =n_H0+n_alt , "err_H0"=sen_H0,"err_Ha"=sen_Ha,"err_D"=err_all,"err_exp" = exp_err,"err_obs" = err_alt)
-  return(data)
-}
-
-sampling_error<-function(d){
-  temp<-sample(ind ,d ,replace = FALSE)
-  sub<-subset(d, V3 %in% temp & V4 %in% temp & V5 %in% temp & V6 %in% temp))
-  resD<-as.data.frame(do.call(rbind,by(dataD, dataD[,1:2], function(x) error_Ds(x))))
-}
-
-
-
-
-
-data<-read.table('tempDstat',h=F)
-data$V14<-as.factor(paste(data$V12,data$V13, sep=""))
-ind<-unique(c(unique(data$V3),unique(data$V4),unique(data$V5),unique(data$V6)))
-data$V15<-(p.adjust(data$V9,"fdr"))
-lvl<-seq(4,length(ind),4)
-
-samp<-function(x){
-ll=c()
-for (i in 1:200){
-  # set.seed(i)
-  temp<-sample(ind ,x,replace = FALSE)
-  sub<-subset(data, V3 %in% temp & V4 %in% temp & V5 %in% temp & V6 %in% temp)
-  signi_D<-sub[sub$V15<=0.05,]
-  true_pos<-nrow(signi_D[signi_D$V14 == "P3P2"|signi_D$V14 == "P2P3"|
-    signi_D$V14 == "P3P1"|signi_D$V14 == "P1P3",])
-  alt=nrow(signi_D[signi_D$V14 == "OP2"|signi_D$V14 == "OP1"|
-    signi_D$V14 == "N2P1"|signi_D$V14 == "N2P2",])
-  err_alt=alt/(true_pos+alt)
-  ll[i]<-err_alt
-}
-return(ll)
-}
-
-bb=do.call(rbind, lapply(lvl, function(x) samp(x)))
-boxplot(t(bb), ylim = c(0,1), xaxt="n")
-axis(side = 1, at = seq(1:length(lvl)),labels = lvl, cex.axis = 1)
-means <- apply(bb,1, function(x) mean(na.omit(x)))
-points(means,col="red",pch=18, cex = 2)
-
-
-
-
-pdf(file = "sampling_00.pdf", width = 8, height = 8)
-boxplot(t(bb), ylim = c(0,1), xaxt="n")
-axis(side = 1, at = seq(1:length(lvl)),labels = lvl, cex.axis = 1)
-means <- apply(bb,1, function(x) mean(na.omit(x)))
-points(means,col="red",pch=18, cex = 2)
-dev.off()
-
-
-
-
-
-
-
-
-
-
-
-for i in test*; do
-  sed "1d" $i/data.txt | sed "s/^/$i\t/" >> oneDstat
-  sed "1d" $i/data_D3.txt | sed "s/^/$i\t/" >> oneD3
-done
-
-sed "s/^/09\t/" oneDstat > oneDstat2
-
-
-
-
-error_Ds<-function(temp){
-  n_H0<-nrow(temp[temp$V14 == "P3P2"|temp$V14 == "P2P3"|temp$V14 == "P3P1"|temp$V14 == "P1P3",])
-  # n_alt<-nrow(temp[temp$V14 == "N2P2"|temp$V14 == "OP1"|temp$V14 == "N2P1"|temp$V14 == "OP2",])
-  n_alt<-nrow(temp[temp$V14 == "N2P2"|temp$V14 == "N2P1",])
-  exp_err<-n_alt/(n_alt+n_H0)
-  temp$V15<-(p.adjust(temp$V9,"fdr"))
-  # temp$V15<-temp$V9
-  signi_D<-temp[temp$V15<=0.05,]
-  true_pos<-nrow(signi_D[signi_D$V14 == "P3P2"|signi_D$V14 == "P2P3"|signi_D$V14 == "P3P1"|signi_D$V14 == "P1P3",])
-  # alt=nrow(signi_D[signi_D$V14 == "OP2"|signi_D$V14 == "OP1"|signi_D$V14 == "N2P1"|signi_D$V14 == "N2P2",])
-  alt=nrow(signi_D[signi_D$V14 == "N2P1"|signi_D$V14 == "N2P2",])
-  err_alt=alt/(true_pos+alt)
-  sen_H0<-true_pos/n_H0
-  sen_Ha<-alt/n_alt
-  err_all=true_pos/nrow(signi_D)
-  data=c("s" = levels(dataD$V1)[temp$V1[1]],
-  # "t" = levels(dataD[dataD$V1 == levels(dataD$V1)[temp$V1[1]], 2])[temp$V2[1]],
-  "n" =n_H0+n_alt , "err_H0"=sen_H0,"err_Ha"=sen_Ha,"err_D"=err_all,"err_exp" = exp_err,"err_obs" = err_alt)
-  return(data)
-}
-
-
-
-
-dataD<-read.table('oneDstat2',h=F)
-dataD$V14<-as.factor(paste(dataD$V12,dataD$V13, sep=""))
-resD<-as.data.frame(do.call(rbind,by(dataD, dataD[,1:2], function(x) error_Ds(x))))
-
-par(mfrow=c(1,1))
-
-pdf(file = "error_1000_tr.pdf", width = 8, height = 8)
-boxplot(resD[5:6], ylim = c(0,1))
-means <- apply(resD[5:6],2, function(x) mean(na.omit(x)))
-points(means,col="red",pch=18, cex = 2)
-dev.off()
-
-
-err_by_quat<-function(temp){
-  n_H0<-nrow(temp[temp$V14 == "P3P2"|temp$V14 == "P2P3"|temp$V14 == "P3P1"|temp$V14 == "P1P3",])
-  # n_alt<-nrow(temp[temp$V14 == "N2P2"|temp$V14 == "OP1"|temp$V14 == "N2P1"|temp$V14 == "OP2",])
-  n_alt<-nrow(temp[temp$V14 == "N2P2"|temp$V14 == "N2P1",])
-  exp_err<-n_alt/(n_alt+n_H0)
-  temp$V15<-(p.adjust(temp$V9,"fdr"))
-  # temp$V15<-temp$V9
-  signi_D<-temp[temp$V15<=0.05,]
-  true_pos<-nrow(signi_D[signi_D$V14 == "P3P2"|signi_D$V14 == "P2P3"|signi_D$V14 == "P3P1"|signi_D$V14 == "P1P3",])
-  # alt=nrow(signi_D[signi_D$V14 == "OP2"|signi_D$V14 == "OP1"|signi_D$V14 == "N2P1"|signi_D$V14 == "N2P2",])
-  alt=nrow(signi_D[signi_D$V14 == "N2P1"|signi_D$V14 == "N2P2",])
-  err_alt=alt/(true_pos+alt)
-  data=c("err_exp" = exp_err,"err_obs" = err_alt)
-}
-
-
-Q<-dataD[dataD$V2=="test2501",c(3,4,5,6)]
-# x<-Q[1671,]
-res_err_quat<-t(as.data.frame(apply(Q,1,function(x) c(x, err_by_quat(subset(dataD, V3 %in% x[1] & V4 %in% x[2] & V5 %in% x[3] & V6 %in% x[4]))))))
-
-
-pdf(file = "quat_err.pdf", width = 16, height = 8)
-par(mfrow=c(1,2))
-plot(temp[,c(1,2)])
-lines(x=1,y=1, col = 'red')
-plot(temp[,c(1,3)])
-dev.off()
-
-
-pdf(file = "proba.pdf", width = 8, height = 8)
-boxplot(result, ylim = c(0,1))
-dev.off()
-
-
-
-
-
-
-
-
-
-
-
-################################################################################
+############################################################################
 
 
 library("ape")
 library("phangorn")
-library("parallel")
 
 colless<-function(tr) {
     leftright4all<-t(sapply((Ntip(tr)+1):(Ntip(tr)+Nnode(tr)),function(x,tree) Children(tree,x), tree=tr))
@@ -640,12 +77,13 @@ getquatuors<-function(tr) {
 overlap<-function(ab,cd) {
     return(!(ab[2]<cd[1] | cd[2]<ab[1]))
 }
+
 getstartstopofedges<-function(mat,xx) {
     if (!is.null(mat)) {
         return(t(apply(mat,1,function(x,xx) c(x,xx[x]),xx=xx)))
     }
-    else redataDist<-read.table('new_05/data_D.txt',h=T)
-turn(NULL)
+    else
+        return(NULL)
 }
 
 plottreeandinfo<-function(tr, quat, returnxy=TRUE, plot=TRUE) {
@@ -804,6 +242,7 @@ truc<-function(t) {
 
 Ds_error_by_dist<-function(temp){
   signi_D<-temp[temp$Adjust<=0.05,]
+  signi_D<-temp
   true_pos<-nrow(signi_D[signi_D$EV == "P3P2"|signi_D$EV == "P2P3"|
     signi_D$EV == "P3P1"|signi_D$EV == "P1P3",])
   alt<-nrow(signi_D[signi_D$EV == "N2P1"|signi_D$EV == "N2P2",])
@@ -853,98 +292,123 @@ tempdist_relative<-function(x){
   return(res)
 }
 
-
-# par(mfrow=c(1,3))
-
-# error basic
-
-dataDist<-read.table('new_05/data_D.txt',h=T)
-dataDist$EV<-as.factor(paste(dataDist$Donor,dataDist$Recip, sep=""))
-dataDist$RD<-unlist(by(dataDist, dataDist$test, function(x) dist_relative(x)))
-dataDist$Block = as.factor(cut(dataDist$RD,seq(0,1,0.1)))
-dataDist$Adjust<-unlist(by(dataDist, dataDist$test, function(x) adjus(x)))
-ed<-do.call(rbind,by(dataDist, dataDist$test, function(x) truc(x)))
-m_ed<-apply(ed,2,function(x) mean(na.omit(x)))
-
-png(filename = "V2_distance_05.png", width = 600, height = 600, units = "px", pointsize = 12, bg = "white")
-boxplot(ed, main= "Amount of error by level of RDp3p4 (ext=0.5, block=0.1)", cex.axis=0.7, las = 1, varwidth = T,
-  xlab="Levels of distance separating P3 and P4 (RDp3p4)", ylab="Proportion of mis-interpretation")
-points(m_ed, col='red', pch = 18, cex = 2.3)
-dev.off()
-
-# error p4 and out
-dataDist<-read.table('new_05/data_D.txt',h=T)
-dataDist$EV<-as.factor(paste(dataDist$Donor,dataDist$Recip, sep=""))
-dataDist$RD<-unlist(by(dataDist, dataDist$test, function(x) dist_relative(x)))
-dataDist$Block = as.factor(cut(dataDist$RD,seq(0,1,0.1)))
-dataDist$Adjust<-unlist(by(dataDist, dataDist$test, function(x) adjus(x)))
-p4ed<-do.call(rbind,by(dataDist, dataDist$test, function(x) truc2(x)))
-p4m_ed<-apply(p4ed,2,function(x) mean(na.omit(x)))
-poed<-do.call(rbind,by(dataDist, dataDist$test, function(x) truc3(x)))
-pom_ed<-apply(poed,2,function(x) mean(na.omit(x)))
-
-
-par(mfrow=c(1,3))
-boxplot(ed, main= "Amount of error by level of RDp3p4 (ext=0.5, block=0.1)", las = 2 , varwidth = T)
-points(m_ed, col='red', pch = 18, cex = 2.3)
-boxplot(p4ed, main= "Amount of error by level of RDp3p4 (ext=0.5, block=0.1)", las = 2 , varwidth = T)
-points(p4m_ed, col='blue', pch = 18, cex = 2.3)
-boxplot(poed, main= "Amount of error by level of RDp3p4 (ext=0.5, block=0.1)", las = 2 , varwidth = T)
-points(pom_ed, col='green', pch = 18, cex = 2.3)
-
-
-
-# block=100000
-# dataDist$Block = as.factor(cut(dataDist$dP1P4 - dataDist$dP1P3,seq(0,1000000,block)))
-# edB<-do.call(rbind,by(dataDist, dataDist$test, function(x) truc(x)))
-# m_edB<-apply(ed,2,function(x) mean(na.omit(x)))
-# boxplot(edB, main= "Amount of error by level of Dp1p2 (block=1e5, ext=0.9)", las = 2 , varwidth = T)
-# points(m_edB, col='red', pch = 18, cex = 2)
-
-
-ERR2<-function(temp){
-  ### observed
-  signi_D<-temp[temp$Adjust<=0.05,]
-  signi_D<-temp
-  true_pos<-nrow(signi_D[signi_D$EV == "P3P2"|signi_D$EV == "P2P3"|
-    signi_D$EV == "P3P1"|signi_D$EV == "P1P3",])
-    alt<-nrow(signi_D[signi_D$EV == "N2P1"|signi_D$EV == "N2P2",])
-    # alt<-nrow(signi_D[signi_D$EV == "N2P1"|signi_D$EV == "N2P2"|signi_D$EV == "OP2"|signi_D$EV == "OP2"|signi_D$EV == "P4P2"|signi_D$EV == "P4P2",])
-  obs_err<-alt/(true_pos+alt)
-  return(obs_err)
+dist_relative<-function(x){
+  N2<-x$dP1P4 - x$dP1P3
+  res<-N2/x$dP1P4
+  return(res)
 }
 
-
-
-dataDist<-read.table('data_D.txt',h=T)
-time=read.table("TR_time",h=F)
-dataDist$EV<-as.factor(paste(dataDist$Donor,dataDist$Recip, sep=""))
-dataDist$Adjust<-unlist(by(dataDist, dataDist$test, function(x) adjus(x)))
-
-p4ed<-by(dataDist, dataDist$test, function(x) ERR2(x))
-err=as.data.frame(t(rbind(p4ed)))
-plot(time[,2], err[,1])
-
-
-# dist err D and D3
-
-dataDist<-read.table('data_D.txt',h=T)
-dataDist_D3<-read.table('data_D3.txt',h=T)
-
-
-lvl<-levels(dataDist_D3$test)
-
-D3_distancer<-function(x){
-  temp<-dataDist[dataDist$test == as.character(unlist(x[1])),]
-  p12<-temp[temp$P1 == as.character(unlist(x[2])) & temp$P2 == as.character(unlist(x[3])) | temp$P2 == as.character(unlist(x[2])) & temp$P3 == as.character(unlist(x[4])),][c(1:5),c("dP1P2","dP1P3")]
-  true_p12<-as.numeric(names(sort(table(unlist(c(p12))),decreasing=TRUE))[1])
-  p13<-temp[temp$P1 == as.character(unlist(x[2])) & temp$P3 == as.character(unlist(x[4])) | temp$P1 == as.character(unlist(x[2])) & temp$P4 == as.character(unlist(x[4])),][c(1:5),c("dP1P3","dP1P4")]
-  true_p13<-as.numeric(names(sort(table(unlist(c(p13))),decreasing=TRUE))[1])
-  res<-c("dP1P2" = true_p12, "dP1P3" = true_p13)
+err_D<-function(temp){
+  D_H0<-length(which(temp$EV %in% c('P3P1','P3P2','P1P3','P2P3')))
+  D_H1<-length(which(temp$EV %in% c('N2P1','N2P2')))
+  D_H2<-length(which(temp$EV %in% c('OP1','OP2')))
+  D_H3<-length(which(temp$EV %in% c('P4P1','P4P2')))
+  D_err_exp_H1<-D_H1/(D_H0+D_H1)
+  D_err_exp_H2<-D_H2/(D_H0+D_H2)
+  D_err_exp_H3<-D_H3/(D_H0+D_H3)
+  D_err_exp_H123<-(D_H1+D_H2+D_H3)/(D_H0+D_H1+D_H2+D_H3)
+  stemp<-temp[temp$Adjust >= 0.05,]
+  sD_H0<-length(which(stemp$EV %in% c('P3P1','P3P2','P1P3','P2P3')))
+  sD_H1<-length(which(stemp$EV %in% c('N2P1','N2P2')))
+  sD_H2<-length(which(stemp$EV %in% c('OP1','OP2')))
+  sD_H3<-length(which(stemp$EV %in% c('P4P1','P4P2')))
+  sD_err_exp_H1<-sD_H1/(sD_H0+sD_H1)
+  sD_err_exp_H2<-sD_H2/(sD_H0+sD_H2)
+  sD_err_exp_H3<-sD_H3/(sD_H0+sD_H3)
+  sD_err_exp_H123<-(sD_H1+sD_H2+sD_H3)/(sD_H0+sD_H1+sD_H2+sD_H3)
+  res<-c("Derr_exp"=D_err_exp_H1,"DH2err_exp"=D_err_exp_H2,"DH3err_exp"=D_err_exp_H3,"DH123err_exp"=D_err_exp_H123,
+    "Derr_obs"=sD_err_exp_H1,"DH2err_obs"=sD_err_exp_H2,"DH3err_obs"=sD_err_exp_H3,"DH123err_obs"=sD_err_exp_H123)
   return(res)
 }
 
 
-dataDist = dataDist[dataDist$test %in% c("test1001","test1002"),]
-dataDist_D3 = dataDist_D3[dataDist_D3$test %in% c("test1001","test1002"),]
-apply(dataDist_D3,1, function(x) D3_distancer(x))
+
+# plot
+dataDist<-read.table('data_D.txt',h=T)
+dataDist$EV<-as.factor(paste(dataDist$Donor,dataDist$Recip, sep=""))
+dataDist$Adjust<-unlist(by(dataDist, dataDist$test, function(x) adjus(x)))
+dataDist$N2_H.H<-as.factor(dataDist$N2_H.H)
+
+# Error by test
+
+res<-as.data.frame(do.call('rbind',by(dataDist, dataDist$test, function(x) err_D(x))))
+
+write.table(as.data.frame(res$Derr_obs), "err_obs_09", sep = "\t", row.names = F, append = F, quote=F)
+
+
+
+
+
+# Error by number of hidden lineage
+res<-by(dataDist, dataDist$N2_H.H, function(x) Ds_error_by_dist(x))
+a=as.data.frame(t(rbind(res)))
+a$n<-as.numeric(unlist(rownames(a)))
+r2<-summary(lm(a$res~a$n))$r.squared
+
+# Error by distance N2
+dataDist$RD<-unlist(by(dataDist, dataDist$test, function(x) dist_relative(x)))
+dataDist$Block = as.factor(cut(dataDist$RD,seq(0,1,0.1)))
+red<-do.call(rbind,by(dataDist, dataDist$test, function(x) truc(x)))
+m_red<-apply(red,2,function(x) mean(na.omit(x)))
+
+
+png(filename = "Distance_00.png", width = 1200, height = 600, units = "px", pointsize = 12, bg = "white")
+par(mfrow=c(1,2))
+plot(res ,main=paste('Observed erro by hidden diversity (r2=', round(r2,5),')',sep=""),
+  xlab="Number of hidden lineage branching on N2", ylab="Proportion of observed error", pch=19)
+abline(lm(a$res~a$n),col='red')
+boxplot(red, main= "Obverved error by the distance N2", cex.axis=0.7, las = 1, varwidth = T,
+  xlab="Levels of distance N2", ylab="Obverved error")
+points(m_red, col='red', pch = 18, cex = 2)
+dev.off()
+
+
+# colles plot
+
+d0<-read.table("/beegfs/data/tricou/abba_baba/proba_00")
+d5<-read.table("/beegfs/data/tricou/abba_baba/proba_05")
+d9<-read.table("/beegfs/data/tricou/abba_baba/proba_09")
+
+maxcol_c<-max(d0$V2,d5$V2,d9$V2)
+maxcol_e<-max(d0$V3,d5$V3,d9$V3)
+mincol_e<-min(d0$V3,d5$V3,d9$V3)
+maxer_e<-max(d0$V1,d5$V1,d9$V1)
+miner_e<-min(d0$V1,d5$V1,d9$V1)
+
+png(filename = "Colless_00.png", width = 1000, height = 600, units = "px", pointsize = 12, bg = "white")
+par(mfrow=c(1,1))
+plot(d0$V3,d0$V1, xlim=c(mincol_e,maxcol_e), ylim=c(miner_e,maxer_e), col="blue", pch = 19, cex=0.5,
+  main="Probability of error by extant tree imbalance (colless index)",
+  xlab="Colless index", ylab="Probability of error")
+legend("topleft",legend=c("ext=0.0", "ext=0.5","ext=0.9"),
+       col=c("blue", "green", "red"), lty=1, cex=2)
+points(d5$V3,d5$V1, xlim=c(mincol_e,maxcol_e), ylim=c(miner_e,maxer_e), col="green", pch = 19, cex=0.5)
+points(d9$V3,d9$V1, xlim=c(mincol_e,maxcol_e), ylim=c(miner_e,maxer_e), col="red", pch = 19, cex=0.5)
+abline(lm(d0$V1~d0$V3),col='blue')
+abline(lm(d5$V1~d5$V3),col='green')
+abline(lm(d9$V1~d9$V3),col='red')
+dev.off()
+
+
+
+######### test time vs error
+
+
+par(mfrow=c(1,1))
+err0<-read.table('multi_tree_0/err_obs_00',h=T)
+tim0<-read.table('time_00',h=F)
+d0=na.omit(cbind(tim0,err0))
+
+
+err5<-read.table('multi_tree_5/err_obs_05',h=T)
+tim5<-read.table('time_05',h=F)
+d5=na.omit(cbind(tim5,err5))
+
+err9<-read.table('multi_tree_9/err_obs_09',h=T)
+tim9<-read.table('time_09',h=F)
+d9=na.omit(cbind(tim9,err9))
+
+
+plot(d0, col='green', ylim =c(min(c(d0[,2],d5[,2],d9[,2])),max(c(d0[,2],d5[,2],d9[,2]))))
+points(d5, col='blue')
+points(d9, col='red')

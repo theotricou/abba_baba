@@ -7,6 +7,7 @@ args = commandArgs(trailingOnly=TRUE)
 cat("step 1 : initializing \n")
 
 output=args[1]
+# output="."
 source(paste(output,"ms_command.R", sep ="/"))
 source(paste(output,"sim_parameters", sep ="/"))
 library(parallel)
@@ -189,6 +190,21 @@ uniquer<-function(x){
       return(x$seg_sites[[1]][[1]])}
 }
 
+is_sister<-function(x){
+  donor<-as.character(unlist(x[9]))
+  if (donor %in% c("O",'N2','N1')){
+    return('Nope')
+  }else{
+    col<-as.numeric(strsplit(donor,'P')[[1]][2])
+    node=as.numeric(unlist(x[col]))
+    if (true_donor %in% c(node, Ancestors(tree, node))){
+      return('True')
+    }else{
+      return('Sister')
+    }
+  }
+}
+
 ################################################################################
 
 ### D stat
@@ -240,26 +256,28 @@ cat("step 3 : computing D stat \n")
 
 results<-do.call(rbind,mclapply(as.data.frame(t(topologiesD)), function(x) D_stat(sites, x),mc.cores = N_CORE))
 
+results$is_sister<-apply(res,1, function(x) is_sister(x))
+
 cat("step 4 : output D\n")
 
 outfile_d <- paste(output, "data.txt", sep = "/")
 write.table(results, outfile_d, sep = "\t", row.names = F, append = F, quote=F)
 
 ### D3
-
-topologiesD3 <- gettrios(tr)
-topologiesD3 <- apply(topologiesD3,c(1,2), function(x) da[as.character(da$na) == as.character(x),2])
-colnames(topologiesD3)<-c('P1','P2','P3')
-single_trees <- lapply(single_trees, function(x) read.tree(text=x))
-ord<-sort(row.names(cophenetic(single_trees[[1]])))
-blocks<-seq(1,length(single_trees), by=50000)
-fromto<-cbind(blocks,c(blocks[-1]-1, length(single_trees)))
-list_submat<-lapply(1:length(blocks),function(x) devil_mambojambo(x))
-sum_mat<-Reduce('+',list_submat)
-
-cat("step 5 : computing D3\n")
-
-results<-do.call(rbind,mclapply(as.data.frame(t(topologiesD3)), function(x) D3_v2(sum_mat, x),mc.cores = N_CORE))
+#
+# topologiesD3 <- gettrios(tr)
+# topologiesD3 <- apply(topologiesD3,c(1,2), function(x) da[as.character(da$na) == as.character(x),2])
+# colnames(topologiesD3)<-c('P1','P2','P3')
+# single_trees <- lapply(single_trees, function(x) read.tree(text=x))
+# ord<-sort(row.names(cophenetic(single_trees[[1]])))
+# blocks<-seq(1,length(single_trees), by=50000)
+# fromto<-cbind(blocks,c(blocks[-1]-1, length(single_trees)))
+# list_submat<-lapply(1:length(blocks),function(x) devil_mambojambo(x))
+# sum_mat<-Reduce('+',list_submat)
+#
+# cat("step 5 : computing D3\n")
+#
+# results<-do.call(rbind,mclapply(as.data.frame(t(topologiesD3)), function(x) D3_v2(sum_mat, x),mc.cores = N_CORE))
 
 cat("step 6 : output D3\n")
 
