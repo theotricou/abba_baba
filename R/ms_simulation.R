@@ -254,9 +254,9 @@ true_recip = which(spnd == name_recip) # from variable in sourced file
 
 cat("step 3 : computing D stat \n")
 
-results<-do.call(rbind,mclapply(as.data.frame(t(topologiesD)), function(x) D_stat(sites, x),mc.cores = N_CORE))
+results<-as.data.frame(do.call(rbind,mclapply(as.data.frame(t(topologiesD)), function(x) D_stat(sites, x),mc.cores = N_CORE)))
 
-results$is_sister<-apply(res,1, function(x) is_sister(x))
+results$is_sister<-apply(results,1, function(x) is_sister(x))
 
 cat("step 4 : output D\n")
 
