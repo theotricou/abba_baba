@@ -57,7 +57,7 @@ From: ubuntu:18.04
       https://cran.r-project.org/src/contrib/ape_5.3.tar.gz \
       https://cran.r-project.org/src/contrib/Archive/Rcpp/Rcpp_1.0.3.tar.gz \
       https://cran.r-project.org/src/contrib/phangorn_2.5.5.tar.gz \
-      https://cran.r-project.org/src/contrib/phyclust_0.1-28.tar.gz \
+      https://cran.r-project.org/src/contrib/Archive/phyclust/phyclust_0.1-28.tar.gz \
       https://cran.r-project.org/src/contrib/rehh.data_1.0.0.tar.gz \
       https://cran.r-project.org/src/contrib/quadprog_1.5-8.tar.gz \
       https://cran.r-project.org/src/contrib/Archive/igraph/igraph_1.2.4.tar.gz \

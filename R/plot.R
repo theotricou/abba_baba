@@ -321,29 +321,87 @@ err_D<-function(temp){
   return(res)
 }
 
+complet_err_D<-function(temp){
+  D_H0<-length(which(temp$EV %in% c('P3P1','P3P2','P1P3','P2P3')))
+  D_H1<-length(which(temp$EV %in% c('N2P1','N2P2')))
+  D_H2<-length(which(temp$EV %in% c('OP1','OP2')))
+  D_err_exp_H1<-D_H1/(D_H0+D_H1)
+  D_err_exp_H2<-D_H2/(D_H0+D_H2)
+  D_err_exp_H123<-(D_H1+D_H2)/(D_H0+D_H1+D_H2)
+  stemp<-temp[temp$Adjust >= 0.05,]
+  sD_H0<-length(which(stemp$EV %in% c('P3P1','P3P2','P1P3','P2P3')))
+  sD_H1<-length(which(stemp$EV %in% c('N2P1','N2P2')))
+  sD_H2<-length(which(stemp$EV %in% c('OP1','OP2')))
+  sD_err_exp_H1<-sD_H1/(sD_H0+sD_H1)
+  sD_err_exp_H2<-sD_H2/(sD_H0+sD_H2)
+  sD_err_exp_H123<-(sD_H1+sD_H2)/(sD_H0+sD_H1+sD_H2)
+  res<-c("Derr_exp"=D_err_exp_H1,"DH2err_exp"=D_err_exp_H2,"DH123err_exp"=D_err_exp_H123,
+    "Derr_obs"=sD_err_exp_H1,"DH2err_obs"=sD_err_exp_H2,"DH123err_obs"=sD_err_exp_H123)
+  return(res)
+}
+
 
 
 # plot
+options(width = 400)
 dataDist<-read.table('data_D.txt',h=T)
 dataDist$EV<-as.factor(paste(dataDist$Donor,dataDist$Recip, sep=""))
 dataDist$Adjust<-unlist(by(dataDist, dataDist$test, function(x) adjus(x)))
-dataDist$N2_H.H<-as.factor(dataDist$N2_H.H)
+dataDist$N2_M<-as.factor(dataDist$N2_M)
 
-# Error by test
+# Error PG in quartet by test
 
 res<-as.data.frame(do.call('rbind',by(dataDist, dataDist$test, function(x) err_D(x))))
-
 write.table(as.data.frame(res$Derr_obs), "err_obs_09", sep = "\t", row.names = F, append = F, quote=F)
 
+# error complete, only P4 tr removed
+
+res<-as.data.frame(do.call('rbind',by(dataDist, dataDist$test, function(x) complet_err_D(x))))
+write.table(as.data.frame(res$Derr_obs), "zzz_err_obs_09", sep = "\t", row.names = F, append = F, quote=F)
 
 
 
 
 # Error by number of hidden lineage
+
+
+dataDist$rSpe <- as.factor(dataDist$N2_M / dataDist$N2_I)
+res2<-by(dataDist, dataDist$rSpe, function(x) complet_err_D(x))
+
+
+
+res<-by(dataDist, dataDist$N2_E.E, function(x) Ds_error_by_dist(x))
+a=as.data.frame(t(rbind(res)))
+a$n<-as.numeric(unlist(rownames(a)))
+r2<-summary(lm(a$res~a$n))$r.squared
+
+res2<-by(dataDist, dataDist$SSS, function(x) Ds_error_by_dist(x))
+b=as.data.frame(t(rbind(res2)))
+b$n<-as.numeric(unlist(rownames(b)))
+r22<-summary(lm(b$res2~b$n))$r.squared
+
+
+par(mfrow=c(1,1))
+
+plot(res ,main=paste('Observed erro by hidden diversity (r2=', round(r2,5),')',sep=""),
+  xlab="Number of hidden lineage branching on N2", ylab="Proportion of observed error",col="green", xlim=c(0,35), pch=19)
+abline(lm(a$res~a$n),col='green')
+
+points(res2 ,col="blue", pch=19)
+abline(lm(b$res2~b$n),col='blue')
+
+
+
 res<-by(dataDist, dataDist$N2_H.H, function(x) Ds_error_by_dist(x))
 a=as.data.frame(t(rbind(res)))
 a$n<-as.numeric(unlist(rownames(a)))
 r2<-summary(lm(a$res~a$n))$r.squared
+
+points(res, col="red", pch=19)
+abline(lm(a$res~a$n),col='red')
+
+
+dataDist$N2_H.S = dataDist$N2_H.H - dataDist$N2_E.E
 
 # Error by distance N2
 dataDist$RD<-unlist(by(dataDist, dataDist$test, function(x) dist_relative(x)))
@@ -361,6 +419,36 @@ boxplot(red, main= "Obverved error by the distance N2", cex.axis=0.7, las = 1, v
   xlab="Levels of distance N2", ylab="Obverved error")
 points(m_red, col='red', pch = 18, cex = 2)
 dev.off()
+
+
+
+aa<-function(data){
+ return(data$dP1P3/max(data$dP1P4))
+}
+bb<-function(data){
+ return(data$dP1P4/max(data$dP1P4))
+}
+
+dataDist$d13=unlist(by(dataDist, dataDist$test, function(x) aa(x)))
+
+dataDist$d14=unlist(by(dataDist, dataDist$test, function(x) bb(x)))
+
+
+
+black=dataDist[which(dataDist$EV %in% c("N2P1","N2P1")),]
+red=dataDist[which(dataDist$EV %in% c('P3P1','P3P2','P1P3','P2P3')),]
+par(mfrow=c(1,3))
+
+plot(black$d13,black$d14, col='red', xlim=c(0,1), ylim=c(0,1))
+plot(red$d13,red$d14, col='blue', xlim=c(0,1), ylim=c(0,1))
+plot(black$d13,black$d14, col='red', xlim=c(0,1), ylim=c(0,1))
+points(red$d13,red$d14, col='blue')
+
+
+
+
+
+
 
 
 # colles plot
@@ -411,4 +499,218 @@ d9=na.omit(cbind(tim9,err9))
 
 plot(d0, col='green', ylim =c(min(c(d0[,2],d5[,2],d9[,2])),max(c(d0[,2],d5[,2],d9[,2]))))
 points(d5, col='blue')
-points(d9, col='red')
+oints(d9, col='red')
+
+
+################################################################################
+################################################################################
+
+
+is_true_Dfoil<-function(pattern, EV){
+  if (pattern %in% dfoil_dict[which(dfoil_dict == EV),1]){
+    return("TP")
+  }else if (pattern %in% dfoil_dict[,1]){
+    return("FP")
+  }else if (!pattern %in% dfoil_dict[,1]){
+    return('New_pattern')
+  }else if (EV %in% dfoil_dict[,1]){
+    return("FN")
+  }else{
+    return("none")
+  }
+}
+
+
+d = read.table('data_Dfoil.txt',stringsAsFactors = F, h = T)
+d$pat<-do.call(paste, c(d[,c(20:23)], sep = ""))
+options(width = 400)
+head(d)
+
+EVfoil<-c("+++0","+0++","--0+","-0++","++-0","0+--","--0-","0---","++00","++00","--00","--00",'0000','0000','0000','0000')
+patoil<-c("P1-P3","P3-P1","P1-P4","P4-P1","P2-P3","P3-P2","P2-P4","P4-P2","P1P2-P3","P3-P1P2","P4-P1P2","P1P2-P4","P1-P2","P2-P1","P3-P4","P4-P3")
+dfoil_dict<-as.data.frame(cbind(EVfoil,patoil))
+
+
+
+eval_Dfoil<-function(a,pa,b,pb,c,pc,z,pd){
+  pvalue=0.005
+  if (pa<pvalue){
+    if (a>0){
+      one='+'
+    }else if(a<0){
+      one='-'
+    }
+  }else{one="0"}
+  if (pb<pvalue){
+    if (b>0){
+      two='+'
+    }else if(b<0) {
+      two='-'
+    }
+  }else{two="0"}
+  if (pc<pvalue){
+    if (c>0){
+      tre='+'
+    }else if(c<0) {
+      tre='-'
+    }
+  }else{tre="0"}
+  if (pd<pvalue){
+    if (z>0){
+      fou='+'
+    }else if(z<0) {
+      fou='-'
+    }
+  }else{fou="0"}
+  # res=c('one'=one,
+  # "two"=two,
+  # 'tre'=tre,
+  # 'fou'=fou)
+  res=paste(one,two,tre,fou, sep = "")
+  return(res)
+}
+
+d$pat<-apply(d,1, function(x) eval_Dfoil(as.numeric(x[6]),as.numeric(x[7]),as.numeric(x[8]),as.numeric(x[9]),as.numeric(x[10]),as.numeric(x[11]),as.numeric(x[12]),as.numeric(x[13])))
+
+
+erreur_standard<-function(pattern, EV){
+  if (pattern %in% dfoil_dict[c(1:12),1]){
+    if (pattern %in% dfoil_dict[which(as.character(dfoil_dict$patoil) == EV),1]){
+      return('ok')
+    }else if (grepl("N2", EV, fixed = TRUE)){
+      return('error')
+    }else{
+      return('rest')
+    }
+  }else if (pattern != "0000"){
+    if (grepl("N2", EV, fixed = TRUE)){
+      return("newP")
+    }else{
+      return('rest')
+    }
+  }else{
+    return('rest')
+  }
+}
+
+temp=(apply(d, 1, function(x) erreur_standard(as.character(x[27]), as.character(x[24]))))
+table(temp)
+
+d[which(temp == "error"),]
+d[which(temp == "newP"),]
+d[which(temp == "ok"),]
+d[which(temp == "rest"),]
+
+
+d = read.table('data_Dfoil2.txt',stringsAsFactors = F, h = T)
+
+eval_Dfoil<-function(a,pa,b,pb,c,pc,z,pd){
+  pvalue=0.005
+  if (pa<pvalue){
+    if (a>0){
+      one='+'
+    }else if(a<0){
+      one='-'
+    }
+  }else{one="0"}
+  if (pb<pvalue){
+    if (b>0){
+      two='+'
+    }else if(b<0) {
+      two='-'
+    }
+  }else{two="0"}
+  if (pc<pvalue){
+    if (c>0){
+      tre='+'
+    }else if(c<0) {
+      tre='-'
+    }
+  }else{tre="0"}
+  if (pd<pvalue){
+    if (z>0){
+      fou='+'
+    }else if(z<0) {
+      fou='-'
+    }
+  }else{fou="0"}
+  # res=c('one'=one,
+  # "two"=two,
+  # 'tre'=tre,
+  # 'fou'=fou)
+  res=paste(one,two,tre,fou, sep = "")
+  return(res)
+}
+
+d$pat<-apply(d,1, function(x) eval_Dfoil(as.numeric(x[7]),as.numeric(x[8]),as.numeric(x[9]),as.numeric(x[10]),as.numeric(x[11]),as.numeric(x[12]),as.numeric(x[13]),as.numeric(x[14])))
+
+table(d$pat)
+
+options(width = 400)
+head(d)
+
+EVfoil<-c("+++0","+0++","--0+","-0++","++-0","0+--","--0-","0---","++00","++00","--00","--00",'0000','0000','0000','0000')
+patoil<-c("P1-P3","P3-P1","P1-P4","P4-P1","P2-P3","P3-P2","P2-P4","P4-P2","P1P2-P3","P3-P1P2","P4-P1P2","P1P2-P4","P1-P2","P2-P1","P3-P4","P4-P3")
+dfoil_dict<-as.data.frame(cbind(EVfoil,patoil))
+
+
+
+
+truc<-function(y){
+  temp=unlist(apply(y, 1, function(x) erreur_standard(as.character(x[26]), as.character(x[25]))))
+  err1<-length(which(temp == "error")) / (length(which(temp == "error")) + length(which(temp == "ok")))
+  err2<-(length(which(temp == "error")) + length(which(temp == "newP"))) / (length(which(temp == "newP")) + length(which(temp == "error")) + length(which(temp == "ok")))
+  res=c('err1'=err1,
+    "err2"=err2)
+  return(res)
+}
+
+b=by(d, d$test, function(x) truc(x))
+
+(data=as.data.frame(do.call('rbind', b)))
+
+dist_relative<-function(x){
+  N = (x$dP1P5 - x$dP1P4) / x$dP1P5
+  return(N)
+}
+
+
+d$RD<-unlist(by(d, d$test, function(x) dist_relative(x)))
+d$Block = as.factor(cut(d$RD,seq(0,1,0.1)))
+
+
+block_err<-function(y){
+  return(unlist(by(y, y$Block, function(x) truc(x))))
+}
+
+
+c = by(d,d$test, function(x) block_err(x))
+
+library('plyr')
+res = do.call('rbind.fill' ,lapply(c, function(x) {as.data.frame(t(unlist(x)))} ))
+
+res2 = res[,order(colnames(res))]
+
+
+Rerr1<- res2[,seq(1,19,2)]
+m_re1<-apply(Rerr1,2,function(x) mean(na.omit(x)))
+
+Rerr2<- res2[,seq(1,19,2)+1]
+m_re2<-apply(Rerr2,2,function(x) mean(na.omit(x)))
+
+
+par(mfrow=c(1,3))
+
+boxplot(data)
+points(apply(na.omit(data),2,mean), col = 'red', pch = 18, cex = 2)
+
+boxplot(Rerr1, main= "Obverved error by the distance N2", cex.axis=0.7, las = 1, varwidth = T,
+  xlab="Levels of distance N2", ylab="Obverved error")
+points(m_re1, col='red', pch = 18, cex = 2)
+
+
+boxplot(Rerr2, main= "Obverved error by the distance N2", cex.axis=0.7, las = 1, varwidth = T,
+  xlab="Levels of distance N2", ylab="Obverved error")
+t=points(m_re1, col='blue', pch = 18, cex = 2)
+
+points(m_re2, col='red', pch = 18, cex = 2)

@@ -2,14 +2,18 @@
 scancel -u tricou
 rm -rf test* slurm*
 #
-for i in `seq 1001 1 1001`; do
+for i in `seq 90001 1 90500`; do
   sed "s/aaaa/$i/g" run_slurm.sh > temp
-  # sbatch temp
-  # rm temp
+  sbatch temp
+  #bash temp
+  rm temp
 done
 
+grep -P 'N2\tP' test[34][0-9]/data.txt | column -t | grep 'N2'
 
-rm data_D.txt data_D3.txt
+
+
+rm data_D.txt data_Dfoil.txt
 files=(test*)
 # get the 1st element of the array
 first=${files[0]}
@@ -17,19 +21,19 @@ first=${files[0]}
 files=("${files[@]:1}")
 # process the 1st element
 sed "s/^/`echo $first`\t/" $first/data.txt > data_D.txt
-sed "s/^/`echo $first`\t/" $first/data_D3.txt > data_D3.txt
+sed "s/^/`echo $first`\t/" $first/data_Dfoil.txt > data_Dfoil.txt
 name=`echo $first`
 sed -i -e "0,/$name/ s/$name/test\t/" data_D.txt
-sed -i -e "0,/$name/ s/$name/test\t/" data_D3.txt
+sed -i -e "0,/$name/ s/$name/test\t/" data_Dfoil.txt
 # process the remaining elements
 for i in "${files[@]}"; do
   sed "1d" $i/data.txt | sed "s/^/$i\t/" >> data_D.txt
-  sed "1d" $i/data_D3.txt | sed "s/^/$i\t/" >> data_D3.txt
+  sed "1d" $i/data_Dfoil.txt | sed "s/^/$i\t/" >> data_Dfoil.txt
 done
 head data_D.txt
-head data_D3.txt
+head data_Dfoil.txt
 
-
+grep "Error" data_Dfoil.txt |sort |  uniq
 # colles + proba
 
 for i in tes*; do
@@ -49,12 +53,20 @@ done > TR_time
 
 
 
-# for i in test*;do
-  if [[ `ls $i | wc -l` != 8 ]]; then
+for i in test*;do
+  if [[ `ls $i | wc -l` != 7 ]]; then
     if  [[ ! `squeue -o %j | grep -P "${i#test}"` ]]; then
       echo $i
       rm -rf $i
     fi
+  fi
+done
+for i in `seq 90001 1 90500`; do
+  if [ ! -d test$i ]; then
+    sed "s/aaaa/$i/g" run_slurm.sh > temp
+    sbatch temp
+    # bash temp
+    rm temp
   fi
 done
 
@@ -104,35 +116,22 @@ for i in test*;do
   fi
 done
 
+for i in `seq 10001 1 10500`; do
+  if [ ! -d test$i ]; then
+    sed "s/aaaa/$i/g" run_slurm.sh > temp
+    sbatch temp
+    # bash temp
+    rm temp
+  fi
+done
 
 
-# temp R truc
-
-require('ape')
-tree <- read.tree("aletree")
-d<-read.table('ale_transfers')
-
-
-edge<-tree$edge
-spnd<-c(tree$tip.label, tree$node.label)
-wherefrom<-which(spnd==from)
-whereto<-which(spnd==to)
-fromdad<-edge[edge[,2]==wherefrom,1]
-todad<-edge[edge[,2]==whereto,1]
-
-
-
-
-tresh=0.7
-a<-by(d,d[1],function(x) c(sum(x[x[,3]>tresh,3]),nrow(x)))
-b<-as.data.frame(t(do.call(cbind,a)))
-b$names<-as.character(rownames(b))
-rownames(b)<-NULL
-brl<-as.data.frame(cbind(br<-c(tree$tip.label,tree$node.label), c(0,tree$edge.length)))
-brl<-brl[order(brl[,1]),]
-b<-b[order(b$names),]
-b$dist<-brl$V2
-plot(as.numeric(as.character(b$dist)),b$V1, xlim=c(0,0.11))
-plot(as.numeric(as.character(b$dist)),b$V1)
-b[which(b$V1>140),]
-plot(b$V1, b$V2)
+for i in test*; do
+  if (( `ls $i | wc -l` != 7));then
+    echo $i
+    rm -rf $i
+    sed "s/aaaa/${i:4}/g" run_slurm.sh > temp
+    sbatch temp
+    rm temp
+  fi
+done
