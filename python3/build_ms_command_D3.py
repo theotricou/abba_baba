@@ -58,9 +58,17 @@ def alive_at_time(tree, time):
 
 def any_descendant_alive(tree, node):
     # test if the recipient of a gene flow has any descendant, if not no gene flow can be detecte
-    for i in node:
-        if "ali" in i.name:
-            return(True)
+    if node in all_recip_available:
+        for i in node:
+            if "ali" in i.name:
+                return(True)
+
+
+if name in dico.keys():
+    if "GCA" in name:
+        la suite
+    elif "GCF" in name and dico[name] not in toExcept:
+        la suite
 
 
 t = tr(args.tree, format = 1) # read phylo tree
@@ -143,6 +151,20 @@ if args.verbose:
 sumbranch=0
 for i in t.traverse():
     sumbranch+=i.dist
+
+
+all_alive=[]
+for i in t:
+    if "ali" in i.names:
+        all_alive.append(i.name)
+
+
+
+extant_ancestor = t.get_common_ancestor(all_alive)
+
+all_recip_available = []
+for i in extant_ancestor.iter_descendants():
+    all_recip_available.append(i)
 
 pop_donor = pop_recip = False
 big_branch=old=0

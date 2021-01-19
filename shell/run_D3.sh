@@ -4,20 +4,21 @@
 path=$0
 singularity=$1
 dir=$2
-seed=$3
+seed1=$3
 zomp=$4
 simp=$5
 sampling=$6
+seed2=$7
 
 if [ ! -d "$dir" ]; then
   mkdir $dir
 
   # switch command for single tree or random trees simulation
-  sed "s/1123581321/$seed/g" $zomp > $dir/zombi_parameters
+  sed "s/1123581321/$seed1/g" $zomp > $dir/zombi_parameters
   # cp $zomp $dir/zombi_parameters
   ##
 
-  sed "s/1123581321/$seed/g" $simp > $dir/sim_parameters
+  sed "s/1123581321/$seed2/g" $simp > $dir/sim_parameters
 
   singularity run $singularity python /simulation/ZOMBI/Zombi.py T $dir/zombi_parameters $dir
 

@@ -135,3 +135,46 @@ for i in test*; do
     rm temp
   fi
 done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+################################################################################
+
+rm -rf test*
+# for i in 2 5 6 73 92; do
+# for i in 5; do
+for i in `seq 1 1 100`; do
+  for j in `seq 1 1 1`; do
+    sed "s/aaaa/$i/g" run_slurm.sh > temp
+    sed -i "s/bbbb/$j/g" temp
+    # sbatch temp
+    echo "TREE"
+    bash temp
+    rm temp
+  done
+done
+cat test*/T/CompleteTree.nwk > trees2
+sss trees2
+
+column -t test*/data_D3.txt | grep "P[12]     P3\|P3     P[12]" | wc -l
+column -t test*/data_D3.txt | grep "O      P[12]" | wc -l
+
+
+
+column -t test*/data_D3.txt | grep P3
+column -t test*/data_D3.txt | grep "O      P1"
+sss test*/spe_tree&
+
+cat test*/spe_tree > trees2
+sss trees2
