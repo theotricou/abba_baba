@@ -522,13 +522,44 @@ is_true_Dfoil<-function(pattern, EV){
 
 
 d = read.table('data_Dfoil.txt',stringsAsFactors = F, h = T)
-d$pat<-do.call(paste, c(d[,c(20:23)], sep = ""))
+d$pat<-do.call(paste, c(d[,c(21:24)], sep = ""))
 options(width = 400)
 head(d)
+
 
 EVfoil<-c("+++0","+0++","--0+","-0++","++-0","0+--","--0-","0---","++00","++00","--00","--00",'0000','0000','0000','0000')
 patoil<-c("P1-P3","P3-P1","P1-P4","P4-P1","P2-P3","P3-P2","P2-P4","P4-P2","P1P2-P3","P3-P1P2","P4-P1P2","P1P2-P4","P1-P2","P2-P1","P3-P4","P4-P3")
 dfoil_dict<-as.data.frame(cbind(EVfoil,patoil))
+
+
+
+Dfoilerr<-function(data){
+  all=data[which(data$EV %in% c("P1-P3","P3-P1","P1-P4","P4-P1","P2-P3","P3-P2","P2-P4","P4-P2","P1P2-P3","P3-P1P2","P4-P1P2","P1P2-P4")),]
+  all2=nrow(all[which(all$pat %in% c("+++0","+0++","--0+","-0++","++-0","0+--","--0-","0---","++00","++00","--00","--00")),])
+  ghost=data[which(data$EV %in% c("N2-P1","N2-P2","N2-P3","N2-P4")),]
+  ghost2=nrow(ghost[which(ghost$pat %in% c("++00","--00","00--","00++")),])
+  err=ghost2/(all2+ghost2)
+  return(err)
+}
+
+
+dist_relative<-function(x){
+  N = (x$dP1P5 - x$dP1P4) / x$dP1P5
+  return(N)
+}
+
+
+d$RD<-unlist(by(d, d$test, function(x) dist_relative(x)))
+
+sub = d[which(d$pat != "0000"),]
+
+xaxix=seq(0,0.99,0.1)
+
+aa=as.data.frame(do.call('rbind',lapply(xaxix,function(x) Dfoilerr(sub[which(sub$RD>=x),]))))
+
+plot(x=xaxix, y=aa$V1)
+
+
 
 
 
@@ -569,6 +600,8 @@ eval_Dfoil<-function(a,pa,b,pb,c,pc,z,pd){
   res=paste(one,two,tre,fou, sep = "")
   return(res)
 }
+
+
 
 d$pat<-apply(d,1, function(x) eval_Dfoil(as.numeric(x[6]),as.numeric(x[7]),as.numeric(x[8]),as.numeric(x[9]),as.numeric(x[10]),as.numeric(x[11]),as.numeric(x[12]),as.numeric(x[13])))
 

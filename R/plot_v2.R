@@ -810,3 +810,29 @@ dev.off()
 ################################################################################
 ################################################################################
 ################################################################################
+
+
+d<-read.table("data_D.txt", h = T)
+d$EV<-as.factor(paste(d$Donor,d$Recip, sep=""))
+d$Quat<-as.factor(paste(d$P1,d$P2,d$P3,d$P4, sep="_"))
+proportion<-function(x){
+  ttt=x[which(x[,9] <= 0.05),]
+  tt=table(x[17])
+  ingroup=as.numeric(tt["P3P2"] + tt["P3P1"] + tt["P1P3"] + tt["P2P3"])
+  ghost=as.numeric(tt["N2P2"] + tt["N2P1"])
+  return(data=c("Ingroup"=ingroup, "Ghost"=ghost))
+}
+a=by(d,d$Quat, function(x) proportion(x))
+b=as.data.frame(do.call(rbind,a))
+sum(b$Ingroup)
+sum(b$Ghost)
+b$Pe <- b$Ghost / (b$Ingroup + b$Ghost)
+write.table(b,file = "error_by_quatuor", quote = F, sep ="\t")
+
+
+
+
+
+sed -i "s/s>/u>/g" ext9_spe_tree
+sed -i "s/l>/s>/g" ext9_spe_tree
+sed -i "s/@[0-9]*//g" ext9_spe_tree

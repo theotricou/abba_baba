@@ -4,7 +4,7 @@
 
 #ddl at https://datadryad.org/stash/dataset/doi:10.5061/dryad.cr1496b
 
-shell part
+# shell part
 
 for i in *fa; do
   B="$(cut -d'_' -f2 <<<"$i")"
@@ -12,31 +12,111 @@ for i in *fa; do
   mv $i $B/
 done
 
+# cut file in scaffolds
 for i in */;do
   cd $i
   csplit *.fa '/scaffold/' '{*}'
-  cd ..
-done
-
-for i in *;do
-  cd $i
   for j in xx*; do
     sed -i "s/scaffold.*/$i/g" $j
   done
   cd ..
 done
 
-
+# concate ali by species
+mkdir polar_ali
+cd NB
 for i in xx*; do
-  cat ../Adm1/$i ../235/$i ../Swe/$i ../Uamericanus/$i > ../ali2/$i
+  cat ../Adm1/$i ../235/$i ../NB/$i ../Uamericanus/$i > ../polar_ali/$i
 done
+cd ../polar_ali
+
+
+rm xx00
+file=
+for i in  xx*[0-9]; do seaview -convert -sites  $i; done # correct for unaligned extremities
+rm *fa
+for i in *fst; do
+  if [ "$i" == "xx01.fst" ]; then # skip first msa to concate with second msa
+    cp $i $i\_n
+    file=$i\_n
+  else # concate msa with previous reste and cut in windows of 1000000
+    seaview -o $i\_n -concatenate $i $file
+    msa_split -w 1000000,0 $i\_n --out-root $i 2> log
+    rm $file
+    # file=$i\_n
+    file=`tail -n 2 log | grep -ho "xx.*fa"`
+  fi
+done
+rm *_n *[0-9] log
+
+for i in *fa;do # correcte the space in > NAME and remove non-snp sites
+  sed -i "s/> />/" $i
+  snp-sites -c $i
+done
+rm *fa
+
+
+
+
+
+
+
+#concatenate all files and cut them in files of 1000000 base for block jackknife
+for i in  xx*[0-9]; do seaview -convert -sites  $i; done
+# rm xx00
+build_string=*fst
+IFS=' ' read -r -a build_list <<< "$build_string"
+echo $build_list
+file=xx01
+echo $file
+for i in ${build_list[@]:1}; do
+  echo $i
+done
+
+
+
+
+build_string=*fst
+#build_list=("$build_string")  <-- this is not converting into array, following line is.
+IFS=' ' read -r -a build_list <<< $build_string
+
+echo $build_list
+for i in "${build_list[@]:1}"
+   do  echo $i
+done
+
+
+
+  seaview -o $i\_n -concatenate $file $i
+  # rm $file
+  msa_split -w 1000000,0 $i\_n --out-root $i 2> log
+  file=`tail -n 2 log | grep -ho "xx.*fa"`
+done
+
+# remove none snp sites, for faster R run
+for i in *fa;do
+  sed -i "s/> />/" $i
+  snp-sites -c $i
+done
+
+rm *fa *_n *[0-9] log
+
+
+
+
+
+
 for i in  xx*; do seaview -convert -sites  $i; done
+
+
+
 
 
 for i in *fst;do
   sed -i "s/N/-/g" $i
   ~/Downloads/9_softwares/Gblocks_Linux64_0.91b/Gblocks_0.91b/Gblocks $i -b5=n
   snp-sites $i-gb
+  rm *htm
 done
 
 
@@ -70,7 +150,7 @@ done
 for i in *fa;do
   snp-sites -c $i
 done
-
+rm *fa *_n *[0-9]
 ################################################################################
 ################################################################################
 
@@ -135,7 +215,7 @@ Der<-function(x){
 
 
 DD<-function(x){
-  d=read.table(x, h=F, row.names=1)
+  d=as.data.frame(as.matrix(read.alignment(files[i], format = "fasta")))
   abba=0
   baba=0
   bbaa=0

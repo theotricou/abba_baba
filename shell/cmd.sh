@@ -21,17 +21,17 @@ first=${files[0]}
 files=("${files[@]:1}")
 # process the 1st element
 sed "s/^/`echo $first`\t/" $first/data.txt > data_D.txt
-sed "s/^/`echo $first`\t/" $first/data_Dfoil.txt > data_Dfoil.txt
+# sed "s/^/`echo $first`\t/" $first/data_Dfoil.txt > data_Dfoil.txt
 name=`echo $first`
 sed -i -e "0,/$name/ s/$name/test\t/" data_D.txt
-sed -i -e "0,/$name/ s/$name/test\t/" data_Dfoil.txt
+# sed -i -e "0,/$name/ s/$name/test\t/" data_Dfoil.txt
 # process the remaining elements
 for i in "${files[@]}"; do
   sed "1d" $i/data.txt | sed "s/^/$i\t/" >> data_D.txt
-  sed "1d" $i/data_Dfoil.txt | sed "s/^/$i\t/" >> data_Dfoil.txt
+  # sed "1d" $i/data_Dfoil.txt | sed "s/^/$i\t/" >> data_Dfoil.txt
 done
 head data_D.txt
-head data_Dfoil.txt
+# head data_Dfoil.txt
 
 grep "Error" data_Dfoil.txt |sort |  uniq
 # colles + proba
@@ -143,7 +143,8 @@ done
 
 
 
-
+export PATH=/mnt/mydatalocal/hal/bin:${PATH}
+export PYTHONPATH=/mnt/mydatalocal:${PYTHONPATH}
 
 
 
@@ -151,21 +152,61 @@ done
 
 ################################################################################
 
-rm -rf test*
-# for i in 2 5 6 73 92; do
-# for i in 5; do
-for i in `seq 1 1 100`; do
+rm -rf test* temp
+
+
+for i in test*;do
+  if [[ `ls $i | wc -l` != 7 ]]; then
+    if  [[ ! `squeue -o %j | grep -P "${i#test}"` ]]; then
+      echo $i
+      rm -rf $i
+    fi
+  fi
+done
+
+rm -rf test* temp
+for i in `seq 101 1 200`; do
   for j in `seq 1 1 1`; do
     sed "s/aaaa/$i/g" run_slurm.sh > temp
     sed -i "s/bbbb/$j/g" temp
     # sbatch temp
-    echo "TREE"
     bash temp
     rm temp
   done
 done
-cat test*/T/CompleteTree.nwk > trees2
-sss trees2
+#
+#
+# for i in test*; do
+#   cd $i
+#   if [ ! -f data_D3_v2.txt ]; then
+#     /beegfs/data/soft/R-3.5.2/bin/Rscript /beegfs/data/tricou/abba_baba/branch_lenghts_D3/scr.Rscript
+#   fi
+#   cd ..
+# done
+#
+
+rm data_D3.txt
+files=(test*)
+# get the 1st element of the array
+first=${files[0]}
+# remove the 1st element of from array
+files=("${files[@]:1}")
+# process the 1st element
+sed "s/^/`echo $first`\t/" $first/data_D3_v2.txt > data_D3.txt
+# sed "s/^/`echo $first`\t/" $first/data_Dfoil.txt > data_Dfoil.txt
+name=`echo $first`
+sed -i -e "0,/$name/ s/$name/test\t/" data_D3.txt
+# sed -i -e "0,/$name/ s/$name/test\t/" data_Dfoil.txt
+# process the remaining elements
+for i in "${files[@]}"; do
+  sed "1d" $i/data_D3_v2.txt | sed "s/^/$i\t/" >> data_D3.txt
+  # sed "1d" $i/data_Dfoil.txt | sed "s/^/$i\t/" >> data_Dfoil.txt
+done
+head data_D3.txt | column -t
+
+
+
+
 
 column -t test*/data_D3.txt | grep "P[12]     P3\|P3     P[12]" | wc -l
 column -t test*/data_D3.txt | grep "O      P[12]" | wc -l
@@ -174,7 +215,3 @@ column -t test*/data_D3.txt | grep "O      P[12]" | wc -l
 
 column -t test*/data_D3.txt | grep P3
 column -t test*/data_D3.txt | grep "O      P1"
-sss test*/spe_tree&
-
-cat test*/spe_tree > trees2
-sss trees2

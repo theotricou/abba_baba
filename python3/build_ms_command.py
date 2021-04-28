@@ -1,7 +1,7 @@
 #! /usr/bin/env python
-# Theo
+# Theo Tricou
 
-# build ms command file from a phylogeny tree
+# Converte a species tree from Zombi simulation in ms command file readable by coala in R.
 
 import os
 import sys
@@ -16,9 +16,9 @@ parser = argparse.ArgumentParser(description='Optional app description')
 
 parser.add_argument('tree', type = str, help = 'A phylogenetic tree')
 parser.add_argument('-o', '--output', type = str, nargs = "?", default = "Simulation", help = "Name of the simulation folder. Default is 'Simulation'.")
-parser.add_argument('-p', '--parameters', type = str, nargs = "?", default = False, help ='An optionnal parameters file argument')
-parser.add_argument('-s', '--sample', type = int, nargs = "?", default = False, help ='An optionnal parameters for sampling')
-parser.add_argument("-v", "--verbose", action = "store_true", help = "Increase output verbosity")
+parser.add_argument('-p', '--parameters', type = str, nargs = "?", default = False, help ='Optionnal parameters file argument')
+parser.add_argument('-s', '--sample', type = int, nargs = "?", default = False, help ='Sampling option. Optionnal parameters to selected how many leaves must be conserved')
+parser.add_argument("-v", "--verbose", action = "store_true", help = "Change output verbosity")
 args = parser.parse_args()
 
 def gene_t(node):
@@ -76,17 +76,6 @@ else:
     sampled = random.sample(extant,args.sample)
 
 
-# sampled=["aaaaaaaaaj","aaaaaaaaac","aaaaaaaaae","aaaaaaaaag","aaaaaaaaaa"]
-
-# test one tree multiple events
-# ll=[2,4,8,12,13,14,15,16,17,18,19,20,21,23,25,30,33,34,38,40]
-# a=0
-# for i in t:
-#     a+=1
-#     if a in ll:
-#         sample.append(i.name)
-
-# end test
 
 # general ms parameters,if the parameters file existe the following default parameters are overruled
 if args.parameters == False:
@@ -198,3 +187,6 @@ with open(os.path.join(args.output,'ms_command.R'), "w") as output:
 
 if args.verbose:
     print(True_migration)
+
+
+#GNU Terry Pratchett
