@@ -3,7 +3,7 @@
 
 
 require('ape')
-require('phangorn')q
+require('phangorn')
 
 data<-read.table('data_D3.txt', h=T)
 tree<-read.tree('spe_tree')
@@ -83,7 +83,7 @@ D3_error_by_param<-function(data){
   return(c('err'=D3_err, "R"=nrow(data)))
 }
 
-a=by(d,as.factor(d$R), function(x) D3_error_by_param(x))
+# a=by(d,as.factor(d$R), function(x) D3_error_by_param(x))
 d$R2<-(d$ext+d$uns+d$ali)/d$allsp
 step=0.05
 xaxix=seq(0,1,step)
